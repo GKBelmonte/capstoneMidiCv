@@ -42,7 +42,7 @@
             // 
             // serialPort
             // 
-            this.serialPort.BaudRate = 57600;
+            this.serialPort.BaudRate = 31250;
             // 
             // cbSerialSelect
             // 
