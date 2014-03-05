@@ -8,32 +8,35 @@
 
 
 uint8_t byteNumber = 0;
+#define OMNI_ON true
 uint8_t channel = 0;
 uint8_t lastMidiMessage = 0;
 uint8_t CCType = 0;
-uint8_t velocity = 0;
 
+uint8_t velocity = 0;
 uint8_t note = 0;
+
 uint16_t pitch_wheel = 0x2000;
 bool rightChannel = false;
 uint8_t messageType;
 uint8_t cCVal;
 
-
-uint16_t runningAve [16];
+const uint8_t POPULATION = 4;
+uint16_t runningAve [POPULATION];
 uint8_t currentIndex = 0;
 #define ERROR_LED 4
 #define TRIGGER_PIN 5
-#define GATE_PIN 6
-#define DAC1_SELECT 9 
-#define DAC2_SELECT 8 
+#define GATE_PIN 7
+#define DAC1_SELECT 6 
+#define DAC2_SELECT 8  //unused
 
 void ReadIRAnalogue()
 {
   runningAve[currentIndex] = analogRead(A7);
   currentIndex++;
-  currentIndex = currentIndex == 16? 0 : currentIndex;
-  CallMeBackInNOverflows(ReadIRAnalogue , 16, 0);
+  currentIndex = currentIndex == POPULATION? 0 : currentIndex;
+  CallMeBackInNOverflows(ReadIRAnalogue , 1, 0);
+  // Serial.println("IR");
 }
 
 void setup()
@@ -41,8 +44,12 @@ void setup()
   Serial.begin(31250);
   InitializeTimer(1,0,1024,0,true,false);
   pinMode(A7, INPUT);
-  CallMeBackInNOverflows(ReadIRAnalogue , 16, 0);
-  
+  pinMode(3, OUTPUT);//pwm pin
+  CallMeBackInNOverflows(ReadIRAnalogue , 4, 0);
+  /** SPI pins are 10 (SS), 11 (MOSI), 12 (MISO), 13 (SCK). */
+  SPI.setBitOrder(MSBFIRST); 
+  SPI.begin();
+  Serial.begin(31250);
   
   pinMode(ERROR_LED,OUTPUT);
   pinMode(TRIGGER_PIN,OUTPUT);
@@ -52,28 +59,53 @@ void setup()
   digitalWrite(DAC1_SELECT, LOW);
   digitalWrite(DAC2_SELECT, LOW);
 
-  /** SPI pins are 10 (SS), 11 (MOSI), 12 (MISO), 13 (SCK). */
-  SPI.setBitOrder(MSBFIRST); 
-  SPI.begin();
+  
 }
 
 void ErrorLEDOff() { }
 void PulseErrorLED()
 {
-  digitalWrite(ERROR_LED, LOW);
+  digitalWrite(ERROR_LED, HIGH);
+  Serial.println("ERR");
 }
 void TriggerOff()
 {
   digitalWrite(TRIGGER_PIN, LOW);
   
-  digitalWrite(ERROR_LED, HIGH);
+  digitalWrite(ERROR_LED, LOW);
 }
 
 void NotePlayed()
 {
   digitalWrite(GATE_PIN, HIGH);
   digitalWrite(TRIGGER_PIN, HIGH);
-  CallMeBackInNOverflows(TriggerOff , 8, 1);
+  CallMeBackInNOverflows(TriggerOff , 4, 1);
+  unsigned int command;
+  //Set note CV 
+  command = 0x0000;//DAC1A
+  command |= 0x1000; //turn on
+  //command |= 0x2000;//no gain 
+  int eqVoltage =((int)((float)note * 163.3333f)); 
+  Serial.println(eqVoltage);
+  command |= ( eqVoltage& 0x0FFF);
+  
+  SPI.setDataMode(SPI_MODE0);
+  digitalWrite(DAC1_SELECT,LOW);
+  SPI.transfer(command>>8);
+  SPI.transfer(command&0xFF);
+  digitalWrite(DAC1_SELECT,HIGH);
+  //Set velocity CV
+  /*
+  command = 0x8000;//DAC1B
+  command |= 0x1000; //turn on
+  command |= 0x2000;//no gain 
+  command |= ( (velocity << 4) & 0x0FFF);
+  SPI.setDataMode(SPI_MODE0);
+  digitalWrite(DAC1_SELECT,LOW);
+  SPI.transfer(command>>8);
+  SPI.transfer(command&0xFF);
+  digitalWrite(6,HIGH);
+  */
 }
 void NotesOff()
 {
@@ -85,31 +117,62 @@ void ChangePitch()
 
 }
 
-
+uint8_t IrAverage()
+{
+  uint16_t sum = 0;
+  for(uint8_t ii = 0 ; ii < POPULATION ; ++ii)
+  {
+    sum += runningAve[ii];
+  }
+  return sum >> 4 ;
+}
+#define DEBUG
+uint8_t loopcount = 0;
 void loop()
 {
-  
+  loopcount++;
+
+  analogWrite(3,IrAverage());
+
   if(Serial.available() > 0)
    {
       uint8_t recbyte = Serial.read(); 
-        uint8_t event_message = recbyte >> 7;
+      uint8_t event_message = recbyte >> 7;
+      #ifdef DEBUG
+      Serial.print("R");
+      Serial.print(recbyte);
+      Serial.print("#");
+      Serial.print(byteNumber);
+      Serial.print("T");
+      Serial.println(event_message);
+      #endif
       switch( byteNumber )
       {
         case 0: //MIDI message type and channel 
         {
           uint8_t chan = recbyte & 0x0F; //1st nibble is channel
-          if(chan == channel && event_message == 1)
+          if((chan == channel||OMNI_ON) && event_message == 1)
           {
               rightChannel = true;
               messageType = (recbyte >> 4) & 0x0F;
+              #ifdef DEBUG
+              Serial.print("M");
+              Serial.println(messageType);
+              #endif
               if( messageType == NOTE_ON)
               {
                 //Note On
+                #ifdef DEBUG
+                Serial.println("NN");
+                #endif
               }
               else if (messageType == NOTE_OFF)
               {
                 //Note Off
-                NotesOff();  
+                NotesOff();
+                #ifdef DEBUG
+                Serial.println("NO");
+                #endif  
               }
               else if (messageType == PITCH_WHEEL)
               {
@@ -130,26 +193,33 @@ void loop()
               }
               else
               {
+                Serial.println("B0-Unrec");
                 PulseErrorLED();
               }
-            byteNumber++;    
+              byteNumber++;    
           }//else not our channel so ignore
           
           break; //End case 0
         }
         case 1: //second MIDI byte
        {   
-       
+         byteNumber++;
           if(event_message == 1) 
           {
           //There was an error. This ought to
           //be an information signal OR not our channel
           //PulseLEDErrorLight();
-           
+           #ifdef DEBUG
+           Serial.println("BEM");
+           #endif
           }
           else if( messageType == NOTE_ON )
           {
             note = recbyte;
+           #ifdef DEBUG
+           Serial.print("note:");
+           Serial.println(note);
+           #endif
           }
           else if(messageType == NOTE_OFF)
           {
@@ -162,6 +232,7 @@ void loop()
             if (CCType == 0x120 || CCType == 0x123)
             {
               //ADSR goes off (All-sound-off message, all-notes-off message)
+              NotesOff();
             }
           }
           else if(messageType == PITCH_WHEEL)
@@ -177,6 +248,8 @@ void loop()
           }
           else
           {
+            Serial.println("B1-Unrec");
+            byteNumber = 0;
             //Debug error message could be send by uart
             PulseErrorLED();
           }
@@ -192,15 +265,21 @@ void loop()
           }
           else if( messageType == NOTE_ON )
           {
+            
             velocity = recbyte;
             if(velocity == 0)
             {
               //Turn ADSR off
+              NotesOff();
             }
             else
             {
               NotePlayed();
             }
+            #ifdef DEBUG
+            Serial.print("Vel");
+            Serial.println(velocity);
+            #endif
           }
           else if(messageType == NOTE_OFF)
           {
@@ -222,6 +301,7 @@ void loop()
           {
             //Debug error message could be sent here too.
             PulseErrorLED();
+            Serial.println("B2-Unrec");
           }
           byteNumber = 0;
           break;

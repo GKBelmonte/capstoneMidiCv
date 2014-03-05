@@ -29,6 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MidiCv));
             this.serialPort = new System.IO.Ports.SerialPort(this.components);
             this.cbSerialSelect = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
@@ -38,6 +39,8 @@
             this.l_send = new System.Windows.Forms.Label();
             this.bSend = new System.Windows.Forms.Button();
             this.tbReceived = new System.Windows.Forms.TextBox();
+            this.pbKeyboard = new System.Windows.Forms.PictureBox();
+            ((System.ComponentModel.ISupportInitialize)(this.pbKeyboard)).BeginInit();
             this.SuspendLayout();
             // 
             // serialPort
@@ -112,14 +115,28 @@
             this.tbReceived.Location = new System.Drawing.Point(37, 70);
             this.tbReceived.Multiline = true;
             this.tbReceived.Name = "tbReceived";
-            this.tbReceived.Size = new System.Drawing.Size(391, 159);
+            this.tbReceived.ReadOnly = true;
+            this.tbReceived.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
+            this.tbReceived.Size = new System.Drawing.Size(391, 93);
             this.tbReceived.TabIndex = 7;
+            // 
+            // pbKeyboard
+            // 
+            this.pbKeyboard.Image = ((System.Drawing.Image)(resources.GetObject("pbKeyboard.Image")));
+            this.pbKeyboard.ImageLocation = "";
+            this.pbKeyboard.InitialImage = ((System.Drawing.Image)(resources.GetObject("pbKeyboard.InitialImage")));
+            this.pbKeyboard.Location = new System.Drawing.Point(37, 169);
+            this.pbKeyboard.Name = "pbKeyboard";
+            this.pbKeyboard.Size = new System.Drawing.Size(251, 190);
+            this.pbKeyboard.TabIndex = 8;
+            this.pbKeyboard.TabStop = false;
             // 
             // MidiCv
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(515, 241);
+            this.ClientSize = new System.Drawing.Size(515, 365);
+            this.Controls.Add(this.pbKeyboard);
             this.Controls.Add(this.tbReceived);
             this.Controls.Add(this.bSend);
             this.Controls.Add(this.l_send);
@@ -130,6 +147,7 @@
             this.Controls.Add(this.cbSerialSelect);
             this.Name = "MidiCv";
             this.Text = "MIDI USB";
+            ((System.ComponentModel.ISupportInitialize)(this.pbKeyboard)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -146,6 +164,7 @@
         private System.Windows.Forms.Label l_send;
         private System.Windows.Forms.Button bSend;
         private System.Windows.Forms.TextBox tbReceived;
+        private System.Windows.Forms.PictureBox pbKeyboard;
     }
 }
 

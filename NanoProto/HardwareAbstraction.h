@@ -104,14 +104,15 @@ ISR(TIMER1_OVF_vect)
 {
   static uint8_t count = 0;
   if(count++ %  32 == 0)
-    digitalWrite(13, !digitalRead(13));
+    digitalWrite(3, !digitalRead(3));
 
   if(_callBackID0 != 0)
   {
     if(--_callBackID0_c == 0)
     {
+      void (*t)() = _callBackID0 ;
       _callBackID0();
-      _callBackID0 = 0;
+      _callBackID0 = t;
     }
   }
 
@@ -119,8 +120,9 @@ ISR(TIMER1_OVF_vect)
   {
     if(--_callBackID1_c == 0)
     {
+      void (*t)() = _callBackID1 ;
       _callBackID1();
-      _callBackID1 = 0;
+      _callBackID1 = t;
     }
   }
 }
