@@ -1,0 +1,5 @@
+MIDI-CV-prototype/MIDI-CV-prototype/bin/
+MIDI-CV-prototype/MIDI-CV-prototype/obj/
+MCPDAC/MCPDAC.cpp
+MCPDAC/MCPDAC.h
+MCPDAC/examples/TriangleWave/TriangleWave.ino

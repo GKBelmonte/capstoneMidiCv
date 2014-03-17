@@ -29,6 +29,8 @@ uint8_t currentIndex = 0;
 #define GATE_PIN 7
 #define DAC1_SELECT 6 
 #define DAC2_SELECT 8  //unused
+bool iRcontrolled = false;
+
 
 void ReadIRAnalogue()
 {
@@ -56,9 +58,12 @@ void setup()
   pinMode(GATE_PIN, OUTPUT);
   pinMode(DAC1_SELECT, OUTPUT);
   pinMode(DAC2_SELECT, OUTPUT);
+  
+  
   digitalWrite(DAC1_SELECT, LOW);
   digitalWrite(DAC2_SELECT, LOW);
-
+  digitalWrite(GATE_PIN, HIGH);
+  digitalWrite(TRIGGER_PIN, HIGH);
   
 }
 
@@ -70,23 +75,23 @@ void PulseErrorLED()
 }
 void TriggerOff()
 {
-  digitalWrite(TRIGGER_PIN, LOW);
+  digitalWrite(TRIGGER_PIN, HIGH);
   
   digitalWrite(ERROR_LED, LOW);
 }
 
 void NotePlayed()
 {
-  digitalWrite(GATE_PIN, HIGH);
-  digitalWrite(TRIGGER_PIN, HIGH);
+  digitalWrite(GATE_PIN, LOW);
+  digitalWrite(TRIGGER_PIN, LOW);
   CallMeBackInNOverflows(TriggerOff , 4, 1);
   unsigned int command;
   //Set note CV 
   command = 0x0000;//DAC1A
   command |= 0x1000; //turn on
   //command |= 0x2000;//no gain 
-  int eqVoltage =((int)((float)note * 163.3333f)); 
-  Serial.println(eqVoltage);
+  int eqVoltage =((int)((float)note * 83.333f));//163.3333f)); 
+  //Serial.println(eqVoltage);
   command |= ( eqVoltage& 0x0FFF);
   
   SPI.setDataMode(SPI_MODE0);
@@ -109,7 +114,7 @@ void NotePlayed()
 }
 void NotesOff()
 {
-  digitalWrite(GATE_PIN, LOW);
+  digitalWrite(GATE_PIN, HIGH);
 }
 
 void ChangePitch()
@@ -126,17 +131,39 @@ uint8_t IrAverage()
   }
   return sum >> 4 ;
 }
-#define DEBUG
+
+//#define DEBUG
 uint8_t loopcount = 0;
+
 void loop()
 {
   loopcount++;
-
-  analogWrite(3,IrAverage());
-
-  if(Serial.available() > 0)
+  uint8_t irVal = IrAverage();
+  analogWrite(3,irVal);
+  if(loopcount %4 == 0 && iRcontrolled )
+  {
+    digitalWrite(GATE_PIN, LOW);
+    digitalWrite(TRIGGER_PIN, LOW);
+    unsigned int command;
+    //Set note CV 
+    command = 0x0000;//DAC1A
+    command |= 0x1000; //turn on
+    //command |= 0x2000;//no gain 
+    unsigned int eqVoltage =  ((unsigned int)irVal) << 4; 
+    //Serial.println(eqVoltage);
+    command |= ( eqVoltage& 0x0FFF);
+    
+    SPI.setDataMode(SPI_MODE0);
+    digitalWrite(DAC1_SELECT,LOW);
+    SPI.transfer(command>>8);
+    SPI.transfer(command&0xFF);
+    digitalWrite(DAC1_SELECT,HIGH);
+  }
+    if(Serial.available() > 0)
    {
       uint8_t recbyte = Serial.read(); 
+      if(recbyte == 254) //Skip active sensing
+        return;
       uint8_t event_message = recbyte >> 7;
       #ifdef DEBUG
       Serial.print("R");
@@ -146,6 +173,10 @@ void loop()
       Serial.print("T");
       Serial.println(event_message);
       #endif
+      if(!event_message && messageType == NOTE_ON && byteNumber == 0) //allow after touch
+        byteNumber = 1;
+      
+        
       switch( byteNumber )
       {
         case 0: //MIDI message type and channel 
@@ -186,10 +217,17 @@ void loop()
               //the transmitter. (llllll) are the least significant 7 bits. (mmmmmm) 
               //are the most significant 7 bits. 
               }
-              else if (messageType == 1100 /*patch change*/
-                      ||/*Aftertouch*/ messageType == 1101 )
+              else if (messageType == 12 /*patch change*/
+                      ||/*Aftertouch*/ messageType == 13 )
               {
                 //not supported
+                Serial.println("IR-E");
+                iRcontrolled =  !iRcontrolled;
+              }
+              else if(messageType == 15)
+              {
+                //active sensing: N.B. should no longer be reached
+                byteNumber = -1;//HACK
               }
               else
               {
@@ -210,7 +248,7 @@ void loop()
           //be an information signal OR not our channel
           //PulseLEDErrorLight();
            #ifdef DEBUG
-           Serial.println("BEM");
+           //Serial.println("BEM");
            #endif
           }
           else if( messageType == NOTE_ON )
@@ -240,8 +278,8 @@ void loop()
             //LS(7bits) of pitch wheel
             pitch_wheel = recbyte;
           }
-          else if (messageType == 1100 /*patch change*/
-                      ||/*Aftertouch*/ messageType == 1101 )
+          else if (messageType == 12 /*patch change*/
+                      ||/*Aftertouch*/ messageType == 13 )
           {
             //not supported (end-of-message)
             byteNumber = 0;
