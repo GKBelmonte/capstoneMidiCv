@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Atmel Studio Solution File, Format Version 11.00
 Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "MIDI_CV_firmware", "MIDI_CV_firmware\MIDI_CV_firmware.cproj", "{148E7F51-ED3D-4B3C-8BD8-1DCB3E0E6CBE}"
 EndProject
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "SPITest", "SPITest\SPITest.cproj", "{76100A9D-E515-432F-AD06-2ADC1CC961AB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|AVR = Debug|AVR
@@ -13,6 +15,10 @@ Global
 		{148E7F51-ED3D-4B3C-8BD8-1DCB3E0E6CBE}.Debug|AVR.Build.0 = Debug|AVR
 		{148E7F51-ED3D-4B3C-8BD8-1DCB3E0E6CBE}.Release|AVR.ActiveCfg = Release|AVR
 		{148E7F51-ED3D-4B3C-8BD8-1DCB3E0E6CBE}.Release|AVR.Build.0 = Release|AVR
+		{76100A9D-E515-432F-AD06-2ADC1CC961AB}.Debug|AVR.ActiveCfg = Debug|AVR
+		{76100A9D-E515-432F-AD06-2ADC1CC961AB}.Debug|AVR.Build.0 = Debug|AVR
+		{76100A9D-E515-432F-AD06-2ADC1CC961AB}.Release|AVR.ActiveCfg = Release|AVR
+		{76100A9D-E515-432F-AD06-2ADC1CC961AB}.Release|AVR.Build.0 = Release|AVR
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

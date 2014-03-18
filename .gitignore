@@ -3,3 +3,4 @@ MIDI-CV-prototype/MIDI-CV-prototype/obj/
 MCPDAC/MCPDAC.cpp
 MCPDAC/MCPDAC.h
 MCPDAC/examples/TriangleWave/TriangleWave.ino
+MIDI_CV_firmware/SPITest/Debug/
