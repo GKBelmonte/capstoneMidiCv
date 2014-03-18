@@ -60,22 +60,26 @@ for(var ii = 0; ii < 4 ; ++ii){
 #define PD6 54
 #define PD7 55
 
+#define INTERRUPT_LEVEL_DISABLED 0
+#define INTERRUPT_LEVEL_1 1
+#define INTERRUPT_LEVEL_2 2
+#define INTERRUPT_LEVEL_3 3
 
 void digitalWrite(uint8_t pin, uint8_t high_low)
 {
     switch(pin>>4)
     {
         case 0:
-            PortAWrite(pin & 0x0F,high_low);
+            PORTA.OUT = high_low ? (PORTA.OUT | (1 << ((pin & 0x0F) & 0x0F) )) : (PORTA.OUT & ~(1 << (pin & 0x0F)))  ;
             break;
         case 1:
-            PortBWrite(pin & 0x0F,high_low); 
+            PORTB.OUT = high_low ? (PORTB.OUT | (1 << ((pin & 0x0F) & 0x0F) )) : (PORTB.OUT & ~(1 << (pin & 0x0F)))  ; 
             break;
         case 2:
-            PortCWrite(pin & 0x0F,high_low);
+            PORTC.OUT = high_low ? (PORTC.OUT | (1 << ((pin & 0x0F) & 0x0F) )) : (PORTC.OUT & ~(1 << (pin & 0x0F)))  ;
             break;
         case 3:
-            PortDWrite(pin & 0x0F,high_low);
+            PORTD.OUT = high_low ? (PORTD.OUT | (1 << ((pin & 0x0F) & 0x0F) )) : (PORTD.OUT & ~(1 << (pin & 0x0F)))  ;
             break;
     }
 }
@@ -85,16 +89,16 @@ void pinMode(uint8_t pin, uint8_t dir)
     switch(pin>>4)
     {
         case 0:
-        PortADir(pin & 0x0F,dir);
+        PORTA.DIR = dir ? (PORTA.DIR | (1 << (pin & 0x0F) )) : (PORTA.DIR & ~(1 << (pin & 0x0F))) ;
         break;
         case 1:
-        PortBDir(pin & 0x0F,dir);
+        PORTB.DIR = dir ? (PORTB.DIR | (1 << (pin & 0x0F) )) : (PORTB.DIR & ~(1 << (pin & 0x0F))) ;
         break;
         case 2:
-        PortCDir(pin & 0x0F,dir);
+        PORTC.DIR = dir ? (PORTC.DIR | (1 << (pin & 0x0F) )) : (PORTC.DIR & ~(1 << (pin & 0x0F))) ;
         break;
         case 3:
-        PortDDir(pin & 0x0F,dir);
+        PORTD.DIR = dir ? (PORTD.DIR | (1 << (pin & 0x0F) )) : (PORTD.DIR & ~(1 << (pin & 0x0F))) ;
         break;
     }
 }

@@ -29,7 +29,7 @@
 
 #define SPI_ORDER_MASK 0b00100000
 
-SPI_t _SPI_struct;
+
 /*
     SPI pins for AtXmega32C4
     
@@ -107,55 +107,55 @@ void _begin()
     //MOSI and SCK  and SS as output
     PORTC.DIR |= 0b10110000; 
     PORTC.PIN4CTRL |= PORT_OPC_WIREDANDPULL_gc;
-    _SPI_struct.DATA = 0;
-    _SPI_struct.CTRL |= SPI_MASTER; //Master
-    _SPI_struct.CTRL |= SPI_ENABLE_bm; //Start SPI
+    SPIC.DATA = 0;
+    SPIC.CTRL |= SPI_MASTER; //Master
+    SPIC.CTRL |= SPI_ENABLE_bm; //Start SPI
 }
 uint8_t _transfer(uint8_t trans)
 {
-    _SPI_struct.DATA = trans;
-    while(~ (_SPI_struct.STATUS & SPI_IF_bm ) );
-    uint8_t res = _SPI_struct.DATA;
+    SPIC.DATA = trans;
+    while(~ (SPIC.STATUS & SPI_IF_bm ) );
+    uint8_t res = SPIC.DATA;
     return res;
 }
 void _setBitOrder( uint8_t order)
 {
     if(order == SPI_MSbFIRST)
-        _SPI_struct.CTRL |= SPI_ORDER_MASK; //LSbfirst
+        SPIC.CTRL |= SPI_ORDER_MASK; //LSbfirst
     else
-        _SPI_struct.CTRL &= ~SPI_ORDER_MASK; //MSbfirst
+        SPIC.CTRL &= ~SPI_ORDER_MASK; //MSbfirst
 }
 
 
-void _end(){_SPI_struct.CTRL &= ~ SPI_ENABLE_bm;}
+void _end(){SPIC.CTRL &= ~ SPI_ENABLE_bm;}
 void _setDataMode(uint8_t   mode)
 {
-    _SPI_struct.CTRL &= ~SPI_MODE_MASK;//clear the bits
-    _SPI_struct.CTRL |= mode;
+    SPIC.CTRL &= ~SPI_MODE_MASK;//clear the bits
+    SPIC.CTRL |= mode;
 }
 
 void _setClockDivisor(uint8_t divisor)
 {
-    _SPI_struct.CTRL &= ~SPI_CLOCK_MASK; //Clear
+    SPIC.CTRL &= ~SPI_CLOCK_MASK; //Clear
     switch (divisor)
     {
         case 2:
-            _SPI_struct.CTRL |= SPI_CLOCK_DIV2;
+            SPIC.CTRL |= SPI_CLOCK_DIV2;
             break;
         case 4:
-            _SPI_struct.CTRL |= SPI_CLOCK_DIV4;
+            SPIC.CTRL |= SPI_CLOCK_DIV4;
             break;
         case 8:
-            _SPI_struct.CTRL |= SPI_CLOCK_DIV8;
+            SPIC.CTRL |= SPI_CLOCK_DIV8;
             break;
         case 16:
-            _SPI_struct.CTRL |= SPI_CLOCK_DIV16;
+            SPIC.CTRL |= SPI_CLOCK_DIV16;
             break;
         case 32:
-            _SPI_struct.CTRL |= SPI_CLOCK_DIV32;
+            SPIC.CTRL |= SPI_CLOCK_DIV32;
             break;
         case 64:
-            _SPI_struct.CTRL |= SPI_CLOCK_DIV64;
+            SPIC.CTRL |= SPI_CLOCK_DIV64;
             break;
     }
 }
