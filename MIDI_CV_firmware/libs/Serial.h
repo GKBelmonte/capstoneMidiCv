@@ -180,7 +180,7 @@ struct Serial_struct
     }
     ISR(USARTD0_RXC_vect)
     {
-        _serial_buffer[++_serial_buff_write_pos] = USARTD0.DATA;
+        _serial_buffer[(++_serial_buff_write_pos)&0b00111111] = USARTD0.DATA;
     }
     
     void _sendSingleSync(char  what)

@@ -32,7 +32,11 @@ int main(void)
        SPILib.Transfer(0);
        SPILib.Transfer(count);
        digitalWrite(DAC1PIN,HIGH);
-       _delay_ms(100);
+       _delay_ms(250);
+       _delay_ms(250);
+       _delay_ms(250);
+       _delay_ms(250);
+       _delay_ms(250);
 
     }
 }
