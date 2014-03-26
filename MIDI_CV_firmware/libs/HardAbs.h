@@ -105,4 +105,24 @@ void pinMode(uint8_t pin, uint8_t dir)
 }
 
 
+uint8_t digitalRead(uint8_t pin)
+{
+    switch(pin>>4)
+    {
+        case 0:
+            return (PORTA.IN >> (pin & 0x07)) & 0x01  ;
+            break;
+        case 1:
+            return (PORTB.IN >> (pin & 0x07)) & 0x01  ;
+            break;
+        case 2:
+            return (PORTC.IN >> (pin & 0x07)) & 0x01  ;
+            break;
+        case 3:
+            return (PORTD.IN >> (pin & 0x07)) & 0x01  ;
+            break;
+    }
+}
+
+
 #endif

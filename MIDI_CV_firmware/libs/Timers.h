@@ -474,6 +474,9 @@ class TimerType0
         inner->CTRLE |= mode;        
     }
     
+    /*
+        Both sets the level AND activates the flag
+    */
     void SetOverflowInterruptLevel(uint8_t level)
     {
         inner->INTCTRLA &= ~ (0b00000011);

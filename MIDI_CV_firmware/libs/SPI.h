@@ -108,6 +108,7 @@ void _begin()
     PORTC.DIR |= 0b10110000; 
     PORTC.PIN4CTRL |= PORT_OPC_WIREDANDPULL_gc;
     SPIC.DATA = 0;
+    _setClockDivisor(16);//Sets the bps at 2MHz
     SPIC.CTRL |= SPI_MASTER; //Master
     SPIC.CTRL |= SPI_ENABLE_bm; //Start SPI
 }
