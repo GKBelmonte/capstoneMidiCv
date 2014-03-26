@@ -7,6 +7,8 @@ Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "SPITest", "SPITest\SPITest.
 EndProject
 Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "SerialTest", "SerialTest\SerialTest.cproj", "{DA6FFEA7-5D99-4FDD-B308-FB108C08E621}"
 EndProject
+Project("{E66E83B9-2572-4076-B26E-6BE79FF3018A}") = "TimerTests", "TimerTests\TimerTests.cppproj", "{BE90F23F-BDAE-42F2-A283-C5824B4F17D6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|AVR = Debug|AVR
@@ -25,6 +27,10 @@ Global
 		{DA6FFEA7-5D99-4FDD-B308-FB108C08E621}.Debug|AVR.Build.0 = Debug|AVR
 		{DA6FFEA7-5D99-4FDD-B308-FB108C08E621}.Release|AVR.ActiveCfg = Release|AVR
 		{DA6FFEA7-5D99-4FDD-B308-FB108C08E621}.Release|AVR.Build.0 = Release|AVR
+		{BE90F23F-BDAE-42F2-A283-C5824B4F17D6}.Debug|AVR.ActiveCfg = Debug|AVR
+		{BE90F23F-BDAE-42F2-A283-C5824B4F17D6}.Debug|AVR.Build.0 = Debug|AVR
+		{BE90F23F-BDAE-42F2-A283-C5824B4F17D6}.Release|AVR.ActiveCfg = Release|AVR
+		{BE90F23F-BDAE-42F2-A283-C5824B4F17D6}.Release|AVR.Build.0 = Release|AVR
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

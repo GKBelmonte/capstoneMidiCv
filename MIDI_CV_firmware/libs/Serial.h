@@ -69,9 +69,9 @@ struct Serial_struct
     uint8_t (*Avalaible) ();
     char (*Read) ();
 } Serial;
-    char _serial_buffer[64];
+    char _serial_buffer_rx[64];
     uint8_t _serial_buff_read_pos;//where last user read from buffer
-    uint8_t _serial_buff_write_pos;//where last char was placed in buffer
+    uint8_t _serial_buff_rx_write_pos;//where last char was placed in buffer
     void InitializeSerialStruct()
     {
         Serial.SetDataBits = _setDataBits;  
@@ -88,10 +88,10 @@ struct Serial_struct
         Serial.Read = _read;
         for(int ii = 0 ; ii < 64 ; ++ii)
         {
-            _serial_buffer[ii] = 0;                
+            _serial_buffer_rx[ii] = 0;                
         }
         _serial_buff_read_pos=0;
-        _serial_buff_write_pos=0;
+        _serial_buff_rx_write_pos=0;
     }
 
     void _setStopBits(uint8_t stopBits)
@@ -155,32 +155,61 @@ struct Serial_struct
         Serial.SetParity(None);
         Serial.SetStopBits(1);
         _setBaudRate(baudRate);
+        //Reset Rx buff
+        for(int ii = 0 ; ii < 64 ; ++ii)
+        {
+            _serial_buffer_rx[ii] = 0;
+        }
+        _serial_buff_read_pos=0;
+        _serial_buff_rx_write_pos=0;
         //Enable receieve
         USARTD0.CTRLB |= SERIAL_TRANSMIT_ENABLE_bm;
         //Enable transmit
         USARTD0.CTRLB |= SERIAL_RECEIVE_ENABLE_bm;
         //Enable on receive interrupt enable
         Serial.SetReceiveInterruptLevel(INTERRUPT_LEVEL_1);
+        
     }
     
     uint8_t _avalaible()
     {
-        return _serial_buff_write_pos - _serial_buff_read_pos;
+        return _serial_buff_rx_write_pos - _serial_buff_read_pos;
     }
     char _read()
     {
-        if(_serial_buff_read_pos != _serial_buff_write_pos)
+        if(_serial_buff_read_pos != _serial_buff_rx_write_pos)
         {
-            char res = _serial_buffer[ 0b00111111&(_serial_buff_read_pos)];
+            char res = _serial_buffer_rx[ 0b00111111&(_serial_buff_read_pos)];
             _serial_buff_read_pos++;
             return res;
         }
         else
             return 0;
     }
+    
+    
     ISR(USARTD0_RXC_vect)
     {
-        _serial_buffer[(++_serial_buff_write_pos)&0b00111111] = USARTD0.DATA;
+        if(! (USARTD0.STATUS & USART_PERR_bm)) //If parity error, throw away
+        {char a = USARTD0.DATA; return;}
+        _serial_buffer_rx[(++_serial_buff_rx_write_pos)&0b00111111] = USARTD0.DATA;
+        //Since buff is 64 in size, %64 can be done by bit mask 0b0011111111
+    }
+    char _serial_buffer_tx[64] ={0};
+    uint8_t _serial_buff_tx_write_pos =0; //Points to the character that was written to
+    uint8_t _serial_buff_tx_read_pos =0; //Points to the character that should be read next
+    //TODO: implement async send
+    ISR(USARTD0_DRE_vect)
+    {
+        if (_serial_buff_tx_write_pos == _serial_buff_tx_read_pos) {
+            //Done transmitting
+            USARTD0.CTRLA &= ~(SERIAL_TRANSMIT_INTERRUPT_LEVEL_bm) ;
+            //clear the bits so that the ISR stops executing
+        }
+        else {
+            // There is more data in the output buffer. Send the next byte
+            USARTD0.DATA = _serial_buffer_tx[(_serial_buff_tx_read_pos++)&0b00111111];
+        }
     }
     
     void _sendSingleSync(char  what)

@@ -18,12 +18,13 @@
 #define PortCDir( _pin_, _dir_ ) (PORTC.DIR = _dir_ ? (PORTC.DIR | (1 << _pin_ )) : (PORTC.DIR & ~(1 << _pin_))  )
 #define PortDDir( _pin_, _dir_ ) (PORTD.DIR = _dir_ ? (PORTD.DIR | (1 << _pin_ )) : (PORTD.DIR & ~(1 << _pin_))  )
 /*
+Pins are defined by the following code
 for(var ii = 0; ii < 4 ; ++ii){
     for(var jj =0; jj <8;++jj)
     {
         console.log(
         "#define P"+String.fromCharCode(65+ii)
-        +jj +" " +( (ii<<4) + jj) );
+        + jj +" " +( (ii<<4) + jj) );
     }
 }
 */
