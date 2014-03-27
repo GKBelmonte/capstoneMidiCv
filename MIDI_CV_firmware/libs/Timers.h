@@ -381,7 +381,7 @@ These bits hold the MSB of the 16-bit compare or capture buffer register.
 
 class TimerType0 
 {
-    TC0_t * inner;
+    TC0_struct * inner;
     static const uint8_t CLOCK_PRESCALER_bm = 0b00001111;
     static const uint8_t PRESCALER_1_bm = 1;
     static const uint8_t PRESCALER_2_bm = 2;
@@ -485,15 +485,12 @@ class TimerType0
         {
             case INTERRUPT_LEVEL_1:
                 inner->INTCTRLA |= 0b00000001;
-                inner->INTFLAGS |=  (0b00000001);
                 break;
             case INTERRUPT_LEVEL_2:
                 inner->INTCTRLA |= 0b00000010;
-                inner->INTFLAGS |=  (0b00000001);
                 break;
             case INTERRUPT_LEVEL_3:
                 inner->INTCTRLA |= 0b00000011;
-                inner->INTFLAGS |=  (0b00000001);
                 break;
         }        
     }
@@ -558,15 +555,15 @@ class TimerType0
     uint8_t _callBackID0_c ;
     uint8_t _callBackID1_c ;
     
-    TimerType0(TC0_t address)
+    TimerType0(TC0_t * address)
     {
-        inner = &address;
+        this->inner = address;
         _callBackID0= 0;
         _callBackID0_c = 0;
         _callBackID1 = 0;
         _callBackID1_c = 0;
     }
-} TCC0_HARDABS(TCC0) , TCD0_HARDABS(TCD0), TCE0_HARDABS(TCE0);
+} TCC0_HARDABS(&TCC0) , TCD0_HARDABS(&TCD0), TCE0_HARDABS(&TCE0);
 
 ISR(TCC0_OVF_vect) 
 {

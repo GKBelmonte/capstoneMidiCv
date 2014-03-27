@@ -122,7 +122,18 @@ uint8_t digitalRead(uint8_t pin)
             return (PORTD.IN >> (pin & 0x07)) & 0x01  ;
             break;
     }
+    return LOW;
 }
 
+/*
+    This garbage appropriately sets the clock to 32MHz
+*/
+void ClockItUp()
+{
+    OSC.CTRL|=OSC_RC32MEN_bm;
+    while (!(OSC.STATUS & OSC_RC32MRDY_bm));
+    CCP=CCP_IOREG_gc;
+    CLK.CTRL=CLK_SCLKSEL_RC32M_gc;    
+}
 
 #endif

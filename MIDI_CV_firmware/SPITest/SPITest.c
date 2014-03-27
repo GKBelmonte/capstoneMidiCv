@@ -14,12 +14,10 @@
 
 int main(void)
 {
-    PortCDir(4,OUTPUT);
     
-    InitalizeSpiStruct();
     pinMode(DAC1PIN,OUTPUT);
     digitalWrite(DAC1PIN,HIGH);
-    
+    InitalizeSpiStruct();
     SPILib.SetBitOrder(SPI_MSbFIRST);
     SPILib.SetDataMode(SPI_MODE_0_gc);
     SPILib.Begin();

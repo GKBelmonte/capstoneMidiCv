@@ -7,6 +7,7 @@
 
 
 #include <avr/io.h>
+#include "../libs/adc.h"
 
 int main(void)
 {

@@ -25,7 +25,7 @@
  PC6:16:MISO
  PC7:17:SCK
  
- PA0:40: ADC channel 0
+ PA0:40: ADC channel 0 / AREF
  PA1:41: ADC channel 1    
  PA2:42: ADC channel 2
  
@@ -47,8 +47,8 @@
 #define GATE_PIN PD5
 #define DAC1_SELECT PC3
 #define DAC2_SELECT PC4  
-#define IR_SENSOR_PIN_A PA0
-#define IR_SENSOR_PIN_B PA1
+#define IR_SENSOR_PIN_A PA1
+#define IR_SENSOR_PIN_B PA2
 
 /*MIDI CONSTS*/
 #define NOTE_ON 9

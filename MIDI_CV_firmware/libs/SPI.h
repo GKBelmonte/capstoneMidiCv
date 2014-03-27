@@ -115,7 +115,7 @@ void _begin()
 uint8_t _transfer(uint8_t trans)
 {
     SPIC.DATA = trans;
-    while(~ (SPIC.STATUS & SPI_IF_bm ) );
+    while(! (SPIC.STATUS & SPI_IF_bm ) );
     uint8_t res = SPIC.DATA;
     return res;
 }
