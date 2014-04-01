@@ -184,13 +184,15 @@ class ADCLib_t
         
         void BeginDefault()
         {
-            ADCA.CTRLA |= 0b00000101; //ch0 start and enable
-            ADCA.CTRLB |= CURRENT_LIMIT_bm; //High current limitation      
+            ADCA.CTRLB |= CURRENT_LIMIT_bm; //High current limitation
             ADCA.CTRLB |= Free <<RUN_MODE_bp; //free run mode
             SetConversionMode(C_8BIT);
-            SetVoltageRef(VoltageVccDiv1p6);
-            SetClockPrescaler(Div512);//32MHz/512 62KHz. It takes some 8 cycles to settle -> 4KHz
+            SetVoltageRef(AREFA);
+            SetClockPrescaler(Div256);//32MHz/512 = 62KHz. It takes some 8 cycles to settle -> 4KHz
             //This allows for High current limitation 
+            
+            ADCA.CTRLA |= 0b00000101; //ch0 start and enable
+            
         }
         
         void SetCurrentLimitation(CurrentLimitation lim)
@@ -229,6 +231,22 @@ class ADCLib_t
             ADCA.PRESCALER |= scale;//bp = 0
         }
         
+        inline uint8_t ConversionComplete ()
+        {
+            return ADCA.INTFLAGS  &1 ;
+        }
+        inline void ClearConversion ()
+        {
+            ADCA.INTFLAGS=1 ;
+        }
+        
+        uint8_t analogRead(uint8_t chan)
+        {
+            ClearConversion();
+            ADCA.CH0.MUXCTRL = 0x07 & chan;
+            while(!ADCA.INTFLAGS);
+            return ADCA.CH0.RESL;
+        }        
 } ADCLib;
 
 #endif

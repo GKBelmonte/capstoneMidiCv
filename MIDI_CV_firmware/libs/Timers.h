@@ -408,6 +408,11 @@ class TimerType0
         ChannelD = 6
     };
     
+    enum WaveformGenerationMode
+    {
+        Normal = 0, FrequencyGeneration = 1, SingleSlope =3, DualSlopeUpdateTop = 5 , DualSlopeUpdateTopAndBottom = 6 ,DualSlopeUpdateBottom = 7
+    };
+    
     void SetTimerDivider (uint16_t prescaler)
     {
         inner->CTRLA &= ~ (CLOCK_PRESCALER_bm);//Clear
@@ -472,6 +477,12 @@ class TimerType0
     {
         inner->CTRLE &= ~0b00000011;
         inner->CTRLE |= mode;        
+    }
+    
+    void SetWaveformGenerationMode(WaveformGenerationMode mode)
+    {
+        inner->CTRLB &=  ~7;
+        inner->CTRLB |= mode;       
     }
     
     /*
@@ -563,7 +574,11 @@ class TimerType0
         _callBackID1 = 0;
         _callBackID1_c = 0;
     }
-} TCC0_HARDABS(&TCC0) , TCD0_HARDABS(&TCD0), TCE0_HARDABS(&TCE0);
+} 
+TCC0_HARDABS(&TCC0), //PC0 10 OC0C
+                     //PC1 11 OC0D 
+TCD0_HARDABS(&TCD0), 
+TCE0_HARDABS(&TCE0);
 
 ISR(TCC0_OVF_vect) 
 {
@@ -584,6 +599,27 @@ ISR(TCC0_OVF_vect)
       TCC0_HARDABS._callBackID1 = 0;
     }
   }
+}
+
+ISR(TCD0_OVF_vect)
+{
+    if(TCD0_HARDABS._callBackID0 != 0)
+    {
+        if(--TCD0_HARDABS._callBackID0_c == 0)
+        {
+            TCD0_HARDABS._callBackID0() ;
+            TCD0_HARDABS._callBackID0 = 0;
+        }
+    }
+
+    if(TCD0_HARDABS._callBackID1 != 0)
+    {
+        if(--TCD0_HARDABS._callBackID1_c == 0)
+        {
+            TCD0_HARDABS._callBackID1();
+            TCD0_HARDABS._callBackID1 = 0;
+        }
+    }
 }
 
 struct Timers
