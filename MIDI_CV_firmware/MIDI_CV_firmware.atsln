@@ -11,6 +11,8 @@ Project("{E66E83B9-2572-4076-B26E-6BE79FF3018A}") = "MIDI_CV_firmware", "MIDI_CV
 EndProject
 Project("{E66E83B9-2572-4076-B26E-6BE79FF3018A}") = "AnalogTests", "AnalogTests\AnalogTests.cppproj", "{E6E5890E-CB61-4B28-A94F-050BAE1B6C21}"
 EndProject
+Project("{E66E83B9-2572-4076-B26E-6BE79FF3018A}") = "UsbTests", "UsbTests\UsbTests.cppproj", "{4E264CDE-0558-4056-BA4A-2A6A09E69079}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|AVR = Debug|AVR
@@ -37,6 +39,10 @@ Global
 		{E6E5890E-CB61-4B28-A94F-050BAE1B6C21}.Debug|AVR.Build.0 = Debug|AVR
 		{E6E5890E-CB61-4B28-A94F-050BAE1B6C21}.Release|AVR.ActiveCfg = Release|AVR
 		{E6E5890E-CB61-4B28-A94F-050BAE1B6C21}.Release|AVR.Build.0 = Release|AVR
+		{4E264CDE-0558-4056-BA4A-2A6A09E69079}.Debug|AVR.ActiveCfg = Debug|AVR
+		{4E264CDE-0558-4056-BA4A-2A6A09E69079}.Debug|AVR.Build.0 = Debug|AVR
+		{4E264CDE-0558-4056-BA4A-2A6A09E69079}.Release|AVR.ActiveCfg = Release|AVR
+		{4E264CDE-0558-4056-BA4A-2A6A09E69079}.Release|AVR.Build.0 = Release|AVR
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -49,12 +49,12 @@ int main(void)
     {
         TCC0_HARDABS.SetCompareChannelValue(TimerType0::ChannelC,val);
         val+=16;
-        _delay_ms(500);
+       // _delay_ms(500);
         digitalWrite(PD5, HIGH);
         digitalWrite(PD4, LOW);
         TCC0_HARDABS.SetCompareChannelValue(TimerType0::ChannelC,val);
         val+=16;
-        _delay_ms(500);
+       // _delay_ms(500);
         digitalWrite(PD5, LOW);
         digitalWrite(PD4, HIGH);
         

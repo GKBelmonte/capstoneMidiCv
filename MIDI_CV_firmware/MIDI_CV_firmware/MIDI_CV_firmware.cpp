@@ -43,11 +43,13 @@
 #include "..\libs\effects.h"
 #include "MIDI_CV_firmware.h"
 
-
+bool readingIrValue = false; //poor mans semaphore
 
 void ReadIRAnalogue()
 {
     //runningAve[currentIndex] = analogRead(A7); //TODO
+    if(readingIrValue)
+        return;
     currentIndex++;
     currentIndex = currentIndex == POPULATION? 0 : currentIndex;
     TCD0_HARDABS.CallMeBackInNOverflows(ReadIRAnalogue , 1, 0);
@@ -74,7 +76,7 @@ void setup()
   TCD0_HARDABS.SetByteMode(TimerType0::EightBit);
   TCD0_HARDABS.SetOverflowInterruptLevel(INTERRUPT_LEVEL_1);
   TCC0_HARDABS.SetTimerDivider(1024); //Yields 32MHz/256 /1024 = 122Hz per OF
-  TCD0_HARDABS.CallMeBackInNOverflows(ReadIRAnalogue , 1, 0);
+  TCD0_HARDABS.CallMeBackInNOverflows(ReadIRAnalogue , 2, 0);
  /** SPI pins are 10 (SS), 11 (MOSI), 12 (MISO), 13 (SCK). */
 
   
@@ -156,11 +158,13 @@ void ChangePitch()
 
 uint8_t IrAverage()
 {
+  readingIrValue = true; //lock poor-mans mutex
   uint16_t sum = 0;
   for(uint8_t ii = 0 ; ii < POPULATION ; ++ii)
   {
     sum += runningAve[ii];
   }
+  readingIrValue = false;//unlock poor-mans mutex
   return sum >> 4 ;
 }
 
@@ -177,13 +181,18 @@ void loop()
   //analogWrite(3,irVal); //TODO
   if(loopcount %4 == 0 && iRcontrolled )
   {
+    
     digitalWrite(GATE_PIN, LOW);
     digitalWrite(TRIGGER_PIN, LOW);
-
-    uint16_t eqVoltage =  noteMap[ noteFromIr(irVal,0 )]; 
+    uint8_t delta = 0;
+    uint16_t eqVoltage=0;
+    if(iRcontrolled == 2) //continious mode (inverse too)
+        eqVoltage =  ((uint16_t)irVal) <<4; 
+    else //discrete
+        eqVoltage =  noteMap[ noteFromIr(irVal,0, &delta )];
     sendToNoteCV(eqVoltage);
   }
-    if(Serial.Avalaible() > 0)
+   if(Serial.Avalaible() > 0)
    {
       uint8_t recbyte = Serial.Read(); 
       if(recbyte == 254) //Skip active sensing
@@ -376,13 +385,13 @@ void loop()
 
 
 
-
 int main(void)
 {
-    
+    setupControl();
     setup();
     while(1)
     {
+        controlCheck();
         loop();
     }
     return 1;

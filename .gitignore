@@ -9,3 +9,4 @@ MIDI_CV_firmware/SerialTest/Debug/
 MIDI_CV_firmware/TimerTests/Debug/
 drivers/
 MIDI_CV_firmware/AnalogTests/Debug/
+*.atsuo

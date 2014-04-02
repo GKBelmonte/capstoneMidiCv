@@ -16,11 +16,19 @@
 #define IR_SENSOR_PIN_A PA1
 #define IR_SENSOR_PIN_B PA2
 
+/*Buttons*/
+#define BUTTON_UP PB0
+#define BUTTON_DOWN PB1
+#define BUTTON_LEFT PB2
+#define BUTTON_RIGHT PB3
+
 /*MIDI CONSTS*/
 #define NOTE_ON 9
 #define NOTE_OFF 8
 #define PITCH_WHEEL 14
 #define CONTROL_CHANGE 11
+
+
 
 
 
@@ -41,7 +49,7 @@ uint8_t cCVal;
 const uint8_t POPULATION = 4;
 uint16_t runningAve [POPULATION];
 uint8_t currentIndex = 0;
-bool iRcontrolled = false;
+uint8_t iRcontrolled = 0;
 #define THIRTYTHREE_MV_PER_HALF_TONE
 extern uint16_t noteMap [];
 
@@ -65,7 +73,7 @@ uint8_t voltagesPerCm[][14]={
     65
 },
 { //ir1
-    230,
+    230, 
     200,
     170,
     150,
@@ -86,21 +94,29 @@ uint8_t voltagesPerCm[][14]={
     Returns a value from 0 to 14 inclusive 
     based on the ADC voltage roughly 1cm appart
 */
-uint8_t noteFromIr (uint8_t voltage,uint8_t irID)
+uint8_t noteFromIr (uint8_t voltage,uint8_t irID, uint8_t  * delta )
 {
     if(voltage > voltagesPerCm[irID][6])
     {   //lower indices
         
         for(uint8_t ii = 0; ii < 6;++ii)
             if(voltage > voltagesPerCm[irID][ii])
+            {   
+                *delta = voltage - voltagesPerCm[irID][ii];
                 return ii;
+            }
+        *delta = voltage - voltagesPerCm[irID][6];             
         return 6;
     }
     else
     {   //higher indices than
         for(uint8_t ii = 7; ii < 14;++ii)
             if(voltage > voltagesPerCm[irID][ii])
+            {
+                *delta = voltage - voltagesPerCm[irID][ii];
                 return ii;
+            }
+        *delta = voltage - voltagesPerCm[irID][14];                
         return 14;
     }
 }

@@ -561,6 +561,20 @@ class TimerType0
       }
     }
     
+    void CancelCallback(uint8_t ID)
+    {
+        if(ID == 0)
+        {
+            _callBackID0 = 0;
+            _callBackID0_c = 0;
+        }
+        else
+        {
+            _callBackID1 = 0;
+            _callBackID1_c = 0;
+        }
+    }
+    
     void (*_callBackID0)() ;
     void (*_callBackID1)() ;
     uint8_t _callBackID0_c ;
