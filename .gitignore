@@ -10,3 +10,6 @@ MIDI_CV_firmware/TimerTests/Debug/
 drivers/
 MIDI_CV_firmware/AnalogTests/Debug/
 *.atsuo
+MIDI_CV_firmware/LCDScreen/Debug/
+MIDI_CV_firmware/SPITestCPP/Debug/
+MIDI_CV_firmware/UsbTests/Debug/

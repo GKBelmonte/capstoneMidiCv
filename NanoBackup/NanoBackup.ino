@@ -8,41 +8,29 @@
  */ 
 /*
 
- 
- PinOut:
- 
- PD0:20: USB connected.
- PD2:22: Serial MIDI RX 
- PD3:23: Serial TX debug
- PD4:24: Trigger
- PD5:25: Gate
- PD6:26: D-
- PD7:27: D+
- 
- PC3:13: DAC 0 select(active low)
- PC4:14: DAC 1 select(active low)
- PC5:15:MOSI
- PC6:16:MISO
- PC7:17:SCK
- 
- PA0:40: ADC channel 0 / AREF
- PA1:41: ADC channel 1    
- PA2:42: ADC channel 2
- 
- PWM enabled pins
- PC0:10
- PC1:11
- //PC2:12 not really
- */ 
+#define ERROR_LED 8 //TODO: ASSIGN
+#define TRIGGER_PIN 2
+#define GATE_PIN 3
+#define DAC1_SELECT A4
+#define DAC2_SELECT A3
+#define LCD_SELECT A5
 
-#include <avr/io.h>
-#include "..\libs\HardAbs.h"
-#include "..\libs\SPI.h"
-#include "..\libs\Serial.h"
-#include "..\libs\Timers.h"
-#include "..\libs\effects.h"
-#include "..\libs\adc.h"
+
+#define IR_SENSOR_PIN_A A7
+#define IR_SENSOR_PIN_B P6
+
+
+#define BUTTON_UP 4
+#define BUTTON_DOWN 5
+#define BUTTON_LEFT 6
+#define BUTTON_RIGHT 7
+ */ 
+#include "SPI.h"
 #include "MIDI_CV_firmware.h"
+#include "HardwareAbstraction.h"
+#include "effects.h"
+
+
 
 bool readingIrValue = false; //poor mans semaphore
 
@@ -50,11 +38,11 @@ void ReadIRAnalogue()
 {
     if(readingIrValue)
         return;
-    runningAve[currentIndex] = ADCLib.analogRead(IR_SENSOR_PIN_A); 
-    runningAve2[currentIndex] = ADCLib.analogRead(IR_SENSOR_PIN_B);
+    runningAve[currentIndex] = analogRead(IR_SENSOR_PIN_A); 
+    runningAve2[currentIndex] = analogRead(IR_SENSOR_PIN_B);
     currentIndex++;
     currentIndex = currentIndex == POPULATION? 0 : currentIndex;
-    TCD0_HARDABS.CallMeBackInNOverflows(ReadIRAnalogue , 1, 0);
+    CallMeBackInNOverflows(ReadIRAnalogue , 4, IR_ISR_ID);
     // Serial.println("IR");
 }
 void setup();
@@ -63,58 +51,51 @@ void loop();
 
 void setup()
 {
-  ClockItUp();
-  InitalizeSpiStruct();
-  InitializeSerialStruct();
-  ADCLib.BeginDefault() ;
-  TCC0_HARDABS.SetByteMode(TimerType0::EightBit);
-  TCC0_HARDABS.SetWaveformGenerationMode(TimerType0::SingleSlope); //Single slope PWM
-  TCC0_HARDABS.SetCompareOrCapture(TimerType0::ChannelC,true);//enable PWM on channel C
-  TCC0_HARDABS.SetOverflowInterruptLevel(INTERRUPT_LEVEL_1);
-  TCC0_HARDABS.SetTimerDivider(64); //Yields 32MHz / 256 / 64 = 1953 Hz  OF
+  InitializeTimer(1,0,256,0,true,false); // 4 times faster than before
+  //IR sensor
   pinMode(IR_SENSOR_PIN_A, INPUT);
   pinMode(IR_SENSOR_PIN_B, INPUT);
-  pinMode(PC0, OUTPUT);//PC0 is channel C 
   
-  TCD0_HARDABS.SetByteMode(TimerType0::EightBit);
-  TCD0_HARDABS.SetOverflowInterruptLevel(INTERRUPT_LEVEL_1);
-  TCC0_HARDABS.SetTimerDivider(256); //Yields 32MHz/256 /256 = 244Hz  OF
-  TCD0_HARDABS.CallMeBackInNOverflows(ReadIRAnalogue , 2, 0);
- /** SPI pins are 10 (SS), 11 (MOSI), 12 (MISO), 13 (SCK). */
-
-  
+  //outputs
   pinMode(ERROR_LED,OUTPUT);
   pinMode(TRIGGER_PIN,OUTPUT);
   pinMode(GATE_PIN, OUTPUT);
+  
+  //SDI select
   pinMode(DAC1_SELECT, OUTPUT);
   pinMode(DAC2_SELECT, OUTPUT);
+  pinMode(LCD_SELECT, OUTPUT);
+  
+  //inputs
+  pinMode(BUTTON_UP,INPUT);
+  pinMode(BUTTON_DOWN,INPUT);
+  pinMode(BUTTON_LEFT, INPUT);
+  pinMode(BUTTON_RIGHT, INPUT);
   
   
   digitalWrite(DAC1_SELECT, LOW);
   digitalWrite(DAC2_SELECT, LOW);
+  digitalWrite(LCD_SELECT, LOW);
+  
   digitalWrite(GATE_PIN, HIGH);
   digitalWrite(TRIGGER_PIN, HIGH);
   
-  Serial.Begin(31250);
-  SPILib.SetBitOrder(SPI_MSbFIRST);
-  SPILib.SetDataMode(SPI_MODE0);
-  SPILib.Begin();
-  //enable all interrupt levels and global
-  sei();
-  PMIC.CTRL |= 7;
+  Serial.begin(31250);
+  SPI.setBitOrder(MSBFIRST);
+  SPI.setDataMode(SPI_MODE0);
+  SPI.begin();
+
   
 }
 
-void ErrorLEDOff() { }
 void PulseErrorLED()
 {
   digitalWrite(ERROR_LED, HIGH);
-  Serial.SendSync("ERR");
+  Serial.println("ERR");
 }
 void TriggerOff()
 {
-  digitalWrite(TRIGGER_PIN, HIGH);
-  
+  digitalWrite(TRIGGER_PIN, HIGH) ; 
   digitalWrite(ERROR_LED, LOW);
 }
 
@@ -122,14 +103,12 @@ void NotePlayed()
 {
   digitalWrite(GATE_PIN, LOW);
   digitalWrite(TRIGGER_PIN, LOW);
-  TCD0_HARDABS.CallMeBackInNOverflows(TriggerOff , 12, 1);
+  CallMeBackInNOverflows(TriggerOff , 48, TRIGGER_ISR_ID);
 
   uint16_t eqVoltage = noteMap[note] ;
   sendToNoteCV(eqVoltage);
   
-  
   //Set velocity CV
-
   sendToVelocityCV( ( ((uint16_t)velocity )<< 5) & 0x0FFF); //   0 <= velocity < 127 -> 0 <= (velocity << 5) < 4064 = 2^12 (so perfect cover) 
 
   
@@ -154,8 +133,8 @@ void ChangePitch()
     command |= ( eqVoltage& 0x0FFF);
     
     digitalWrite(DAC1_SELECT,LOW);
-    SPILib.Transfer(command>>8);
-    SPILib.Transfer(command&0xFF);
+    SPI.transfer(command>>8);
+    SPI.transfer(command&0xFF);
     digitalWrite(DAC1_SELECT,HIGH);
 }
 
@@ -191,7 +170,6 @@ void loop()
 {
   loopcount++;
   uint8_t irVal = IrAverage();
-  //analogWrite(3,irVal); //TODO
   if(loopcount %4 == 0 && iRcontrolled )
   {
     uint8_t irVal2 = IrAverage2();
@@ -207,19 +185,19 @@ void loop()
     sendToNoteCV(eqVoltage);
     sendToVelocityCV(((uint16_t)irVal2) <<4);
   }
-   if(Serial.Avalaible() > 0)
+   if(Serial.available() > 0)
    {
-      uint8_t recbyte = Serial.Read(); 
+      uint8_t recbyte = Serial.read(); 
       if(recbyte == 254) //Skip active sensing
         return;
       uint8_t event_message = recbyte >> 7;
       #ifdef DEBUG
-      Serial.SendSingleSync('R');
-      Serial.SendIntSync(recbyte);
-      Serial.SendSingleSync('#');
-      Serial.SendIntSync(byteNumber);
-      Serial.SendSingleSync('T');
-      Serial.SendIntSync(event_message);
+      Serial.print('R');
+      Serial.println(recbyte);
+      Serial.print('#');
+      Serial.println(byteNumber);
+      Serial.print('T');
+      Serial.println(event_message);
       #endif
       if(!event_message && messageType == NOTE_ON && byteNumber == 0) //allow after touch
         byteNumber = 1;
@@ -235,14 +213,14 @@ void loop()
               rightChannel = true;
               messageType = (recbyte >> 4) & 0x0F;
               #ifdef DEBUG
-              Serial.SendSync("M");
-              Serial.SendIntSync(messageType);
+              Serial.print("M");
+              Serial.println(messageType);
               #endif
               if( messageType == NOTE_ON)
               {
                 //Note On
                 #ifdef DEBUG
-                Serial.SendSync("NN");
+                Serial.send("NN");
                 #endif
               }
               else if (messageType == NOTE_OFF)
@@ -250,7 +228,7 @@ void loop()
                 //Note Off
                 NotesOff();
                 #ifdef DEBUG
-                Serial.SendSync("NO");
+                Serial.print("NO");
                 #endif  
               }
               else if (messageType == PITCH_WHEEL)
@@ -269,7 +247,7 @@ void loop()
                       ||/*Aftertouch*/ messageType == 13 )
               {
                 //not supported
-                Serial.SendSync("IR-E");
+                Serial.println("IR-E");
                 iRcontrolled =  !iRcontrolled;
               }
               else if(messageType == 15)
@@ -279,7 +257,7 @@ void loop()
               }
               else
               {
-                Serial.SendSync("B0-Unrec");
+                Serial.print("B0-Unrec");
                 PulseErrorLED();
               }
               byteNumber++;    
@@ -303,8 +281,8 @@ void loop()
           {
             note = recbyte;
            #ifdef DEBUG
-           Serial.SendSync("note:");
-           Serial.SendIntSync(note);
+           Serial.print("note:");
+           Serial.println(note);
            #endif
           }
           else if(messageType == NOTE_OFF)
@@ -334,7 +312,7 @@ void loop()
           }
           else
           {
-            Serial.SendSync("B1-Unrec");
+            Serial.print("B1-Unrec");
             byteNumber = 0;
             //Debug error message could be send by uart
             PulseErrorLED();
@@ -363,8 +341,8 @@ void loop()
               NotePlayed();
             }
             #ifdef DEBUG
-            Serial.SendSync("Vel");
-            Serial.SendIntSync(velocity);
+            Serial.print("Vel");
+            Serial.println(velocity);
             #endif
           }
           else if(messageType == NOTE_OFF)
@@ -387,7 +365,7 @@ void loop()
           {
             //Debug error message could be sent here too.
             PulseErrorLED();
-            Serial.SendSync("B2-Unrec");
+            Serial.println("B2-Unrec");
           }
           byteNumber = 0;
           break;

@@ -44,7 +44,7 @@ void ReadIRAnalogue()
 void setup()
 {
   Serial.begin(31250);
-  InitializeTimer(1,0,1024,0,true,false);
+  InitializeTimer(1,0,1024,0,true,false); //4 times faster
   pinMode(A7, INPUT);
   pinMode(3, OUTPUT);//pwm pin
   CallMeBackInNOverflows(ReadIRAnalogue , 4, 0);

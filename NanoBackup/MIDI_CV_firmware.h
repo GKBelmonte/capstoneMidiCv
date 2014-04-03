@@ -7,20 +7,23 @@
 /*PIN DEFS*/
 #ifndef MAIN_H
 #define MAIN_H
+#include "Arduino.h"
 
-#define ERROR_LED 4 //TODO: ASSIGN
-#define TRIGGER_PIN PD4
-#define GATE_PIN PD5
-#define DAC1_SELECT PC3
-#define DAC2_SELECT PC4
-#define IR_SENSOR_PIN_A PA1
-#define IR_SENSOR_PIN_B PA2
+
+#define ERROR_LED 8 //TODO: ASSIGN
+#define TRIGGER_PIN 2
+#define GATE_PIN 3
+#define DAC1_SELECT A4
+#define DAC2_SELECT A3
+#define LCD_SELECT A5
+#define IR_SENSOR_PIN_A A7
+#define IR_SENSOR_PIN_B A6
 
 /*Buttons*/
-#define BUTTON_UP PB0
-#define BUTTON_DOWN PB1
-#define BUTTON_LEFT PB2
-#define BUTTON_RIGHT PB3
+#define BUTTON_UP 4
+#define BUTTON_DOWN 5
+#define BUTTON_LEFT 6
+#define BUTTON_RIGHT 7
 
 /*MIDI CONSTS*/
 #define NOTE_ON 9
@@ -29,6 +32,12 @@
 #define CONTROL_CHANGE 11
 
 
+#define IR_ISR_ID 0
+#define TRIGGER_ISR_ID 1
+#define VCO_ISR_ID 2
+#define VCA_ISR_ID 3
+#define D2A_ISR_ID 4
+#define D2B_ISR_ID 5
 
 
 
@@ -51,7 +60,8 @@ uint16_t runningAve [POPULATION];
 uint16_t runningAve2 [POPULATION];
 uint8_t currentIndex = 0;
 uint8_t iRcontrolled = 0;
-#define THIRTYTHREE_MV_PER_HALF_TONE
+//#define THIRTYTHREE_MV_PER_HALF_TONE
+#define  EIGHTYTHREE_MV_PER_HALF_TON
 extern uint16_t noteMap [];
 
 
@@ -535,7 +545,7 @@ uint16_t noteMap[] =
      10333,
      10416,
      10500    
-}
+};
 #endif
 
 #endif
