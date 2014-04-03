@@ -16,10 +16,10 @@
 
 #define SPI_MASTER 0b00010000
 
-#define SPI_MODE0 0x00
-#define SPI_MODE1 0x04
-#define SPI_MODE2 0x08
-#define SPI_MODE3 0x0C
+#define SPI_MODE0 0x00 //0000
+#define SPI_MODE1 0x04 //0100
+#define SPI_MODE2 0x08 //1000
+#define SPI_MODE3 0x0C //1100
 
 #define SPI_MODE_MASK 0x0C  // CPOL = bit 3, CPHA = bit 2 on SPCR
 #define SPI_CLOCK_MASK 0x03  // SPR1 = bit 1, SPR0 = bit 0 on SPCR
@@ -58,10 +58,10 @@
     high when idle.
 
     MODE[1:0]   Group Configuration Leading Edge    Trailing Edge
-    00          0       Rising,     sample Falling, setup
-    01          1       Rising,     setup Falling,  sample
-    10          2       Falling,    sample Rising,  setup
-    11          3       Falling,    setup Rising,   sample
+    00          0                   Rising,         sample Falling, setup
+    01          1                   Rising,         setup Falling,  sample
+    10          2                   Falling,        sample Rising,  setup
+    11          3                   Falling,        setup Rising,   sample
  Bits 1:0 – PRESCALER[1:0]: Clock Prescaler
     These two bits control the SPI clock rate configured in master mode. These bits have no effect in slave mode. The
     relationship between SCK and the peripheral clock frequency ( clkPER) is shown in Table 20-3.
@@ -106,9 +106,9 @@ void _begin()
 {
     //MOSI and SCK  and SS as output
     PORTC.DIR |= 0b10110000; 
-    PORTC.PIN4CTRL |= PORT_OPC_WIREDANDPULL_gc;
+//    PORTC.PIN4CTRL |= PORT_OPC_WIREDANDPULL_gc;
     SPIC.DATA = 0;
-    _setClockDivisor(16);//Sets the bps at 2MHz
+    _setClockDivisor(8);//Sets the bps at 2MHz
     SPIC.CTRL |= SPI_MASTER; //Master
     SPIC.CTRL |= SPI_ENABLE_bm; //Start SPI
 }

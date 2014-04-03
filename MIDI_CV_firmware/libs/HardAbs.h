@@ -2,6 +2,9 @@
 #ifndef HARD_ABS
 #define HARD_ABS
 
+#define EnableGlobalInterrupts() SREG |= 0x80
+#define DisableGlobalInterrupts() SREG &= ~(0x80)
+
 #define HIGH 1
 #define LOW 0
 

@@ -13,50 +13,70 @@
 #define TRIGGER_PIN PD4
 #define GATE_PIN PD5
 
+bool trigger = false;
 void toggleTrigger()
 {
-    static bool state = true;
-    digitalWrite(TRIGGER_PIN,!state);
-    state = !state;
-    TCC0_HARDABS.CallMeBackInNOverflows(toggleTrigger,64,0);
+    trigger = !trigger;
+    digitalWrite(TRIGGER_PIN,trigger);
+    TCC0_HARDABS.CallMeBackInNOverflows(toggleTrigger,10,0);
 }
+bool gate = false;
 void toggleGate()
 {
-    static bool state = true;
-    digitalWrite(GATE_PIN,!state);
-    state = !state;
-    TCC0_HARDABS.CallMeBackInNOverflows(toggleGate,64,1); 
+    gate = !gate;
+    digitalWrite(GATE_PIN,gate);
+    TCC0_HARDABS.CallMeBackInNOverflows(toggleGate,20,1); 
 }
 
 int main(void)
 {
     ClockItUp();
     TCC0_HARDABS.SetByteMode(TimerType0::EightBit);
-    TCC0_HARDABS.SetTimerDivider(256); //Yields 32MHz / 256 / 64 = 1953 Hz per OF
     TCC0_HARDABS.SetOverflowInterruptLevel(INTERRUPT_LEVEL_1);
-    TCC0_HARDABS.SetCompareOrCapture(TimerType0::ChannelC, true);
+    TCC0_HARDABS.SetCompareOrCapture(TimerType0::ChannelA, true);
     TCC0_HARDABS.SetWaveformGenerationMode(TimerType0::SingleSlope);
+    TCC0_HARDABS.SetCompareChannelValue8bit(TimerType0::ChannelA,127);
+    pinMode(PC0,OUTPUT);
+    TCC0_HARDABS.SetTimerDivider(256); //Yields 32MHz / 256 / 256 = 1953 Hz per OF
     
     pinMode(TRIGGER_PIN, OUTPUT);
     pinMode(GATE_PIN, OUTPUT);
     
-    sei();
+    
+    for(uint8_t ii = 0 ; ii< 5;++ii)
+    {
+        digitalWrite(PD4, LOW);
+        _delay_ms(100);
+        digitalWrite(PD4, HIGH);
+        _delay_ms(100);
+        
+    }
+    
+    EnableGlobalInterrupts();
     PMIC.CTRL |= 7;
-    //TCC0_HARDABS.CallMeBackInNOverflows(toggleGate,8,1);
-    //TCC0_HARDABS.CallMeBackInNOverflows(toggleTrigger,16,0);
-    uint8_t val= 0;
+    for(uint8_t ii = 0 ; ii< 5;++ii)
+    {
+        digitalWrite(PD4, LOW);
+        _delay_ms(200);
+        digitalWrite(PD4, HIGH);
+        _delay_ms(200);
+        
+    }
+    TCC0_HARDABS.CallMeBackInNOverflows(toggleGate,1,1);
+    TCC0_HARDABS.CallMeBackInNOverflows(toggleTrigger,2,0);
+    uint8_t val= 128;
     while(1)
     {
-        TCC0_HARDABS.SetCompareChannelValue(TimerType0::ChannelC,val);
+        TCC0_HARDABS.SetCompareChannelValue(TimerType0::ChannelA,val);
         val+=16;
-       // _delay_ms(500);
-        digitalWrite(PD5, HIGH);
-        digitalWrite(PD4, LOW);
-        TCC0_HARDABS.SetCompareChannelValue(TimerType0::ChannelC,val);
+        _delay_ms(100);
+       // digitalWrite(PD5, HIGH);
+       // digitalWrite(PD4, LOW);
+        TCC0_HARDABS.SetCompareChannelValue(TimerType0::ChannelA,val);
         val+=16;
-       // _delay_ms(500);
-        digitalWrite(PD5, LOW);
-        digitalWrite(PD4, HIGH);
+        _delay_ms(100);
+      //  digitalWrite(PD5, LOW);
+      //  digitalWrite(PD4, HIGH);
         
     }
     return 0;

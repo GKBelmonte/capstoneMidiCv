@@ -7,6 +7,7 @@
 #include "..\libs\SPI.h"
 #include "..\libs\HardAbs.h"
 #include <avr/io.h>
+#include "..\libs\Timers.h"
 #define F_CPU 32000000
 #include <util/delay.h>
 #define TEST() (PORTC.DIR |= 0b10000000)
@@ -70,7 +71,29 @@ int main(void)
     TCC0_HARDABS.SetCompareChannelValue8bit(TimerType0::ChannelA,127);
     TCC0_HARDABS.SetTimerDivider(256); //Yields 32MHz / 256 / 256 = 1953 Hz per OF
     pinMode(PD5, OUTPUT);
+    
     TCC0_HARDABS.CallMeBackInNOverflows(toggleGate,1,1);
+
+    pinMode(PD4, OUTPUT);
+    for(uint8_t ii = 0 ; ii< 5;++ii)
+    {
+        digitalWrite(PD4, LOW);
+        _delay_ms(100);
+        digitalWrite(PD4, HIGH);
+        _delay_ms(100);
+        
+    }
+    
+    EnableGlobalInterrupts();
+    PMIC.CTRL |= 7;
+    for(uint8_t ii = 0 ; ii< 5;++ii)
+    {
+        digitalWrite(PD4, LOW);
+        _delay_ms(200);
+        digitalWrite(PD4, HIGH);
+        _delay_ms(200);
+        
+    }
     
     pinMode(DAC1_SELECT,OUTPUT);
     pinMode(DAC2_SELECT,OUTPUT);
@@ -84,14 +107,18 @@ int main(void)
     uint16_t count = 0;
     while(1)
     {
+        
+       //sendToVelocityCV(count);
+       sendToNoteCV(0);
+       count+= 256;
+       _delay_ms(1);
+      // sendToVelocityCV(count);
+       sendToNoteCV(2000);
+       count+= 256;
+       _delay_ms(1);
+       sendToNoteCV(4000);
+       count+= 256;
+       _delay_ms(1);
        
-       count+=64;
-       //count = count & 0b0000111111111111;
-       sendToNoteCV(count);
-       sendToVelocityCV(0b0000111111111111);
-       _delay_ms(50);
-       sendToVelocityCV(0);
-       _delay_ms(50);
-       //_delay_us(5);
     }
 }

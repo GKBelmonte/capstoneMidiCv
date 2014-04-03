@@ -444,31 +444,68 @@ class TimerType0
 
     void SetCompareOrCapture (CompareChannel channel, bool enabled)
     {
+       // CTRLC
+       // Bit 3:0 – CMPx: Compare Output Value x
+       // These bits allow direct access to the waveform generator's output compare value when the 
+       // timer/counter is set in the
+       // OFF state. This is used to set or clear the WG output value when the timer/counter is not running.
+        
+        //CTRLB
+        //Bit 7:4 – CCxEN: Compare or Capture Enable
+        //Setting these bits in the FRQ or PWM waveform generation mode of 
+        //operation will override the port output register for the
+        //corresponding OCn output pin.
+        //When input capture operation is selected, the CCxEN bits enable the capture 
+        //operation for the corresponding CC
+        
         switch(channel)
         {
             case ChannelD:
                 if(enabled)
+                {
                     inner->CTRLB |= 0b10000000;
+                //    inner->CTRLC |= 0b00001000;
+                }                    
                 else
-                    inner->CTRLB &= ~ 0b10000000; 
+                {
+                    inner->CTRLB &= ~ 0b10000000;
+                //    inner->CTRLC &= ~ 0b00001000; 
+                }                    
                 break;
             case ChannelC:
                 if(enabled)
+                {
                     inner->CTRLB |= 0b01000000;
+                //    inner->CTRLC |= 0b00000100;
+                }                    
                 else
+                {
                     inner->CTRLB &= ~ 0b01000000; 
+                //    inner->CTRLC &= ~ 0b00000100;
+                }                    
                 break;
             case ChannelB:
-                if(enabled)
+                if(enabled){
+                    inner->CTRLC |= 0b00000010;
                     inner->CTRLB |= 0b00100000;
+                }                    
                 else
+                {
+                    inner->CTRLC &= ~ 0b00000010;
                     inner->CTRLB &= ~ 0b00100000; 
+                }                    
                 break;
             case ChannelA:
                 if(enabled)
+                {
+                    inner->CTRLC |= 0b00000001;
                     inner->CTRLB |= 0b00010000;
+                }                    
                 else
+                {
+                    inner->CTRLC &= ~ 0b00000001;
                     inner->CTRLB &= ~ 0b00010000; 
+                }                    
                 break;           
         }
     }
@@ -523,17 +560,44 @@ class TimerType0
         switch(channel)
         {
             case ChannelA:
+                //inner->CCABUF = val;
                 inner->CCA = val;
                 break;
             case ChannelB:
+                //inner->CCBBUF = val;
                 inner->CCB = val;
                 break;
             case ChannelC:
+                //inner->CCCBUF = val;
                 inner->CCC = val;
                 break;
             case ChannelD:
+                //inner->CCDBUF = val;
                 inner->CCD = val;
                 break;          
+        }
+    }
+    
+    void SetCompareChannelValue8bit(CompareChannel channel, uint8_t val )
+    {
+        switch(channel)
+        {
+            case ChannelA:
+                //inner->CCABUFL = val;
+                inner->CCAL = val;
+                break;
+            case ChannelB:
+                //inner->CCBBUFL = val;
+                inner->CCBL = val;
+                break;
+            case ChannelC:
+                //inner->CCCBUFL = val;
+                inner->CCCL = val;
+                break;
+            case ChannelD:
+                //inner->CCDBUFL = val;
+                inner->CCDL = val;
+                break;
         }
     }
     
@@ -544,20 +608,22 @@ class TimerType0
     
     void SetPeriod(uint16_t val )
     {
-        inner->PER = val;
+        inner->PERBUF = val;
     }
     
     void CallMeBackInNOverflows(void(*f)(), uint8_t numberOfOF,uint8_t ID)
     {
       if(ID == 0)
       {
-        _callBackID0 = f;
+        
         _callBackID0_c = numberOfOF;
+        _callBackID0 = f;
       }
       else
       {
-        _callBackID1 = f;
+        
         _callBackID1_c = numberOfOF;
+        _callBackID1 = f;
       }
     }
     
@@ -594,14 +660,24 @@ TCC0_HARDABS(&TCC0), //PC0 10 OC0C
 TCD0_HARDABS(&TCD0), 
 TCE0_HARDABS(&TCE0);
 
+
 ISR(TCC0_OVF_vect) 
 {
+    static uint8_t stuff = 0;
+    if(stuff)
+        stuff = 0;
+    else
+        stuff = 1;
+  //  digitalWrite(PD5, stuff);
   if(TCC0_HARDABS._callBackID0 != 0)
   {
     if(--TCC0_HARDABS._callBackID0_c == 0)
     {
-      TCC0_HARDABS._callBackID0() ; 
+      void (*f)()  =TCC0_HARDABS._callBackID0; //if the callback overwrites this, it gets nullified
+      //for callbacks that re-register
+      //thats why we temp it
       TCC0_HARDABS._callBackID0 = 0;
+      f();
     }
   }
 
@@ -609,8 +685,9 @@ ISR(TCC0_OVF_vect)
   {
     if(--TCC0_HARDABS._callBackID1_c == 0)
     {
-      TCC0_HARDABS._callBackID1();
+      void (*f)()  =TCC0_HARDABS._callBackID1;
       TCC0_HARDABS._callBackID1 = 0;
+      f();
     }
   }
 }

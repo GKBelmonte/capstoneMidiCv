@@ -2,7 +2,7 @@
 #define DIGITAL_EFFECTS
 #include "../MIDI_CV_firmware/MIDI_CV_firmware.h"
 #include "fastDivide.h"
-#include "../libs/Serial.h"
+#include "../libs/Serial.h" //for int to ascii
 
 inline void sendToNoteCV (uint16_t volt)
 {
@@ -121,9 +121,33 @@ void Vibrato()
 
 
 
+void clearLCD() 
+{ 
+    digitalWrite(PC3,LOW);
+    SPILib.Transfer((uint8_t)'C');
+    SPILib.Transfer((uint8_t)'L');
+    digitalWrite(PC3,HIGH);
+}
+
 void writeToLCD(const char * str)
 {
-    
+    //Short SPI on the jumpers
+    //jumper alreaddy sorted?
+    //8 bit MSB, no info on speed.
+    //Data sampled on raise edge of clock. probs SPI mode 0
+    //Seding "TRT" text return or CL for clear screen
+    //TT to send text
+    // 0x00 to end Text transmision.. or 0x0d (which is a new line)
+    //CS1 to enable cursor CS0 to disable
+    uint8_t c = 0;
+    digitalWrite(PC3,LOW);
+    SPILib.SetDataMode(SPI_MODE0);
+    SPILib.Transfer((uint8_t)'T');
+    SPILib.Transfer((uint8_t)'T');
+    while(str[c++])
+        SPILib.Transfer((uint8_t)str[c]);
+    SPILib.Transfer(0);
+    digitalWrite(PC3,HIGH);
 }
 
 const char * control_display [] =
@@ -160,7 +184,7 @@ uint8_t control_state_vals_bounds[]=
 
 void setupControl()
 {
-    writeToLCD( "IR controlled: false");
+    writeToLCD( "Yellow!");
     arpeggio_state=0;
     arpeggio_period =0;
     arpeggio_stlye=0;
@@ -206,12 +230,13 @@ const char * EffectEnumMap( uint8_t control_state, uint8_t control_state_val )
 
 void writeLCDNewControlState() 
 {
+    clearLCD();   
 	writeToLCD(control_display[control_state ]) ;
     if( control_state == IR_CONTROLLED_STATE || control_state == ARPEGGIO_PERIOD_STATE  
             || control_state == MODULUS_PERIOD_STATE || control_state == VIBRATO_MAGNITUDE_STATE  || control_state == VIBRATO_PERIOD_STATE   )
     {
         if(*control_state_vals[control_state] == 0)
-            writeToLCD("OFF");
+            writeToLCD("OFF\0");
         else
         {
             char buffer [6] = {0};
@@ -223,6 +248,7 @@ void writeLCDNewControlState()
     {
         writeToLCD(EffectEnumMap (control_state, *control_state_vals[control_state]  ));
     }
+    writeToLCD("\n\0");
 }
 
 void ToggleActiveEffect( uint8_t  val ) 
@@ -261,17 +287,14 @@ void controlCheck()
         //A button has been pressed
         if(!digitalRead(BUTTON_UP))
         {
-            writeToLCD("\n");
             control_state = (control_state +1) % 7;
         }
         else if (!digitalRead(BUTTON_DOWN))
         {
-            writeToLCD("\n");
             control_state = (control_state +6) % 7;
         }
         else if (!digitalRead(BUTTON_LEFT))
         {
-            writeToLCD("\n"); //assuming this is clean  
             uint8_t * val = control_state_vals[control_state];
             uint8_t bounds = control_state_vals_bounds[control_state];
             val[0] = (*val +  bounds- 1 ) %bounds;
@@ -280,7 +303,6 @@ void controlCheck()
         }
         else
         {
-            writeToLCD("\n"); //assuming this is clean
             uint8_t * val = control_state_vals[control_state];
             uint8_t bounds = control_state_vals_bounds[control_state];
             val[0] = (*val +  1 ) %bounds;
