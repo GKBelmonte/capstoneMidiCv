@@ -7,6 +7,9 @@
 #include "Arduino.h"
 
 SoftwareSerial  iamsorry(SOFT_RX,SOFT_TX);
+
+extern uint8_t half_sin[];
+extern uint8_t full_sin[];
 //DigoleSerialDisp  digAHole (11,13,A5);
 inline void sendToNoteCV (uint16_t volt)
 {
@@ -73,32 +76,50 @@ uint8_t modulus_type ; // 0:Saw, 1:InvertedSaw, 2:Triangle
 void Modulus()
 {
        CallMeBackInNOverflows(Modulus , modulus_period << 2, VCA_ISR_ID);
-       sendToVelocityCV 
-        ( FastDivide16( ((uint16_t)velocity )<< 5 , modulus_state )  & 0x0FFF) ;
-        
+       if(modulus_type == 3 || modulus_type == 4)
+       {
+         switch(modulus_type)
+         {
+           case 3:
+             sendToVelocityCV 
+              ( FastDivide16( ((uint16_t)velocity )<< 5 , half_sin[modulus_state] )  & 0x0FFF) ;
+              break;
+          case 4:
+             sendToVelocityCV 
+              ( FastDivide16( ((uint16_t)velocity )<< 5 , full_sin[modulus_state] )  & 0x0FFF) ;
+              break;
+         }
+       }
+       else
+          sendToVelocityCV 
+          ( FastDivide16( ((uint16_t)velocity )<< 5 , modulus_state )  & 0x0FFF) ;
        switch(modulus_type)
        {
             case 0: //Sawtooth
-            modulus_state = (modulus_state + 1) &0b1111;
-            break;
+              modulus_state = (modulus_state + 1) &0b1111;
+              break;
             case 2: //Inverted sawtooth
-            modulus_state = (modulus_state - 1) &0b1111;
-            break;
+              modulus_state = (modulus_state - 1) &0b1111;
+              break;
             case 1: //Triangle
-            if(modulus_state == 15)
-            {
-                modulus_type = 8;
-                modulus_state -=1;
-            }else modulus_state +=1;
-            break;
+              if(modulus_state == 15)
+              {
+                  modulus_type = 8;
+                  modulus_state -=1;
+              }else modulus_state +=1;
+              break;
             
+            case 3: //sineabs
+            case 4: //sineline
+              modulus_state = (modulus_state + 1) &0b11111;
+              break;
             case 8:
-            if(modulus_state == 0)
-            {
-                modulus_type = 1;
-                modulus_state +=1;
-            }else modulus_state -=1;
-            break;   
+              if(modulus_state == 0)
+              {
+                  modulus_type = 1;
+                  modulus_state +=1;
+              }else modulus_state -=1;
+              break;   
        }
 }
 
@@ -117,7 +138,7 @@ uint8_t vibrato_magnitude ; //0 - 15, with 0 being off
 void Vibrato()
 {
     CallMeBackInNOverflows(Vibrato , vibrato_period << 1, VCO_ISR_ID);
-    uint8_t mag = FastDivide8( VIBRATO_MAX , 16 - vibrato_magnitude);
+    uint8_t mag = FastDivide8( VIBRATO_MAX ,  vibrato_magnitude);
     uint16_t eqVoltage = noteMap[note]+ FastDivide8 ( mag , vibrato_state < 16 ? vibrato_state : 16 - (vibrato_state & 0b1111)  )  - (mag >> 1) ;
     sendToNoteCV(eqVoltage);
     vibrato_state = (vibrato_state +1)&0b11111;
@@ -222,12 +243,12 @@ uint8_t * control_state_vals [7] ;/*= {
 };*/
 uint8_t control_state_vals_bounds[]=
 {
-    3,//on-off-cont
-    32,
-    3, //1-5 etc
-    32,
-    3,//triangle, + 2 sawtooths
-    32,
+    3,//on-off-cont IR CONTROLLED
+    32, //Arpegigon period
+    3, //1-5 etc style
+    32, //mod period
+    5,//triangle, + 2 sawtooths +2sin //modstyle
+    32, //vibrato perdiod
     16 //mag off also off
 };
 #define IR_CONTROLLED_STATE 0
@@ -283,7 +304,10 @@ const char * EffectEnumMap( uint8_t control_state, uint8_t control_state_val )
             {
                 case 0: return "Saw";
                 case 1: return "Triangle";
+                
                 case 2: return "InvSaw";
+                case 3: return "AbsSin";
+                case 4: return "Sin";
             }
             break;
     }
@@ -303,7 +327,7 @@ void writeLCDNewControlState()
     {
       delay(1);
         //Serial.println("if1");
-        /*
+        
         if(*control_state_vals[control_state] == 0)
         {
             writeToLCD("OFF");
@@ -315,7 +339,7 @@ void writeLCDNewControlState()
             ResultToAscii(*control_state_vals[control_state],buffer);
             //Serial.println(buffer);
             writeToLCD(buffer);
-        }*/
+        }
         delay(1);        
     }
     else
@@ -407,4 +431,17 @@ void controlCheck()
     }
     
 }
+
+
+uint8_t half_sin [] =
+{
+0,1,3,4,6,7,8,10,11,12,12,13,14,14,15,15,16,15,15,14,14,13,12,12,11,10,8,7,6,4,3,1
+};
+
+uint8_t full_sin [] =
+{
+8,10,11,12,14,14,15,16,16,16,15,14,14,12,11,10,8,7,5,4,3,2,1,1,0,1,1,2,3,4,5,7
+};
+
+
 #endif
