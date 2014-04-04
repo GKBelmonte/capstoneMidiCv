@@ -12,7 +12,7 @@ inline void sendToNoteCV (uint16_t volt)
     //Set note CV
     command = 0x0000;//DAC1A
     command |= 0x1000; //turn on
-    command |= 0x2000;//no gain
+   // command |= 0x2000;//no gain
     command |= ( volt& 0x0FFF);
     
     digitalWrite(DAC1_SELECT,LOW);
@@ -28,7 +28,7 @@ inline void sendToVelocityCV (uint16_t volt)
     //Set note CV
     command = 0x8000;//DAC1A
     command |= 0x1000; //turn on
-    command |= 0x2000;//no gain
+   // command |= 0x2000;//no gain
     command |= ( volt& 0x0FFF);
     
     digitalWrite(DAC1_SELECT,LOW);

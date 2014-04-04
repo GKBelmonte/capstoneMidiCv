@@ -135,7 +135,7 @@ ISR(TIMER1_OVF_vect)
 {
   static uint8_t count = 0;
   if(count++ %  32 == 0)
-    digitalWrite(3, !digitalRead(3));
+    digitalWrite(9, !digitalRead(9));
 
    for(uint8_t ii = 0; ii < 6;++ii)
    {

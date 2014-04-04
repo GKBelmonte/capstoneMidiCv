@@ -30,7 +30,7 @@
 #include "HardwareAbstraction.h"
 #include "effects.h"
 
-
+#define DEBUG
 
 bool readingIrValue = false; //poor mans semaphore
 
@@ -51,12 +51,24 @@ void loop();
 
 void setup()
 {
-  InitializeTimer(1,0,256,0,true,false); // 4 times faster than before
+  Serial.begin(31250);
+  Serial.println("awoke");
+  pinMode(13, OUTPUT);
+  for(uint8_t ii =0 ; ii < 4;++ii)
+  {
+    digitalWrite(13,HIGH);
+    delay(200);
+    digitalWrite(13,LOW);
+    delay(400);
+  }
+  Serial.println("Initializing");
+  InitializeTimer(1,0,64,0,true,false); // 4 times faster than before
   //IR sensor
   pinMode(IR_SENSOR_PIN_A, INPUT);
   pinMode(IR_SENSOR_PIN_B, INPUT);
   
   //outputs
+  pinMode(9,OUTPUT);
   pinMode(ERROR_LED,OUTPUT);
   pinMode(TRIGGER_PIN,OUTPUT);
   pinMode(GATE_PIN, OUTPUT);
@@ -73,14 +85,14 @@ void setup()
   pinMode(BUTTON_RIGHT, INPUT);
   
   
-  digitalWrite(DAC1_SELECT, LOW);
-  digitalWrite(DAC2_SELECT, LOW);
-  digitalWrite(LCD_SELECT, LOW);
+  digitalWrite(DAC1_SELECT, HIGH);
+  digitalWrite(DAC2_SELECT, HIGH);
+  digitalWrite(LCD_SELECT, HIGH);
   
   digitalWrite(GATE_PIN, HIGH);
   digitalWrite(TRIGGER_PIN, HIGH);
+  digitalWrite(ERROR_LED,HIGH);
   
-  Serial.begin(31250);
   SPI.setBitOrder(MSBFIRST);
   SPI.setDataMode(SPI_MODE0);
   SPI.begin();
@@ -90,20 +102,20 @@ void setup()
 
 void PulseErrorLED()
 {
-  digitalWrite(ERROR_LED, HIGH);
+  digitalWrite(ERROR_LED, LOW);
   Serial.println("ERR");
 }
 void TriggerOff()
 {
   digitalWrite(TRIGGER_PIN, HIGH) ; 
-  digitalWrite(ERROR_LED, LOW);
+  digitalWrite(ERROR_LED, HIGH);
 }
 
 void NotePlayed()
 {
   digitalWrite(GATE_PIN, LOW);
   digitalWrite(TRIGGER_PIN, LOW);
-  CallMeBackInNOverflows(TriggerOff , 48, TRIGGER_ISR_ID);
+  CallMeBackInNOverflows(TriggerOff , 12, TRIGGER_ISR_ID);
 
   uint16_t eqVoltage = noteMap[note] ;
   sendToNoteCV(eqVoltage);
@@ -115,6 +127,7 @@ void NotePlayed()
 }
 void NotesOff()
 {
+  sendToVelocityCV(0);
   digitalWrite(GATE_PIN, HIGH);
 }
 
@@ -168,6 +181,9 @@ uint8_t loopcount = 0;
 
 void loop()
 {
+  //Serial.println("loop");
+  //delay(200);
+
   loopcount++;
   uint8_t irVal = IrAverage();
   if(loopcount %4 == 0 && iRcontrolled )
@@ -191,14 +207,14 @@ void loop()
       if(recbyte == 254) //Skip active sensing
         return;
       uint8_t event_message = recbyte >> 7;
-      #ifdef DEBUG
+     // #ifdef DEBUG
       Serial.print('R');
       Serial.println(recbyte);
       Serial.print('#');
       Serial.println(byteNumber);
       Serial.print('T');
       Serial.println(event_message);
-      #endif
+     // #endif
       if(!event_message && messageType == NOTE_ON && byteNumber == 0) //allow after touch
         byteNumber = 1;
       
@@ -220,7 +236,7 @@ void loop()
               {
                 //Note On
                 #ifdef DEBUG
-                Serial.send("NN");
+                Serial.println("NN");
                 #endif
               }
               else if (messageType == NOTE_OFF)
@@ -374,21 +390,3 @@ void loop()
    }//end switch  
 
 }
-
-
-
-
-int main(void)
-{
-    setupControl();
-    setup();
-    while(1)
-    {
-        controlCheck();
-        loop();
-    }
-    return 1;
-}
-
-
-
