@@ -25,12 +25,15 @@
 #define BUTTON_LEFT 6
 #define BUTTON_RIGHT 7
  */ 
+//#include "DigoleSerialDisp.h"
 #include "SPI.h"
+#include "SoftwareSerial.h"
 #include "MIDI_CV_firmware.h"
 #include "HardwareAbstraction.h"
 #include "effects.h"
 
-#define DEBUG
+//DigoleSerialDisp  digAHole2 (11,13,A5);
+//#define DEBUG
 
 bool readingIrValue = false; //poor mans semaphore
 
@@ -63,6 +66,7 @@ void setup()
   }
   Serial.println("Initializing");
   InitializeTimer(1,0,64,0,true,false); // 4 times faster than before
+  
   //IR sensor
   pinMode(IR_SENSOR_PIN_A, INPUT);
   pinMode(IR_SENSOR_PIN_B, INPUT);
@@ -72,6 +76,8 @@ void setup()
   pinMode(ERROR_LED,OUTPUT);
   pinMode(TRIGGER_PIN,OUTPUT);
   pinMode(GATE_PIN, OUTPUT);
+  pinMode(SOFT_TX, OUTPUT);
+  pinMode(SOFT_RX, OUTPUT);
   
   //SDI select
   pinMode(DAC1_SELECT, OUTPUT);
@@ -93,11 +99,14 @@ void setup()
   digitalWrite(TRIGGER_PIN, HIGH);
   digitalWrite(ERROR_LED,HIGH);
   
+  
+  
   SPI.setBitOrder(MSBFIRST);
   SPI.setDataMode(SPI_MODE0);
+  SPI.setClockDivider(SPI_CLOCK_DIV64);
   SPI.begin();
+  setupControl();
 
-  
 }
 
 void PulseErrorLED()
@@ -127,6 +136,7 @@ void NotePlayed()
 }
 void NotesOff()
 {
+  velocity=0;
   sendToVelocityCV(0);
   digitalWrite(GATE_PIN, HIGH);
 }
@@ -207,14 +217,14 @@ void loop()
       if(recbyte == 254) //Skip active sensing
         return;
       uint8_t event_message = recbyte >> 7;
-     // #ifdef DEBUG
+      #ifdef DEBUG
       Serial.print('R');
       Serial.println(recbyte);
       Serial.print('#');
       Serial.println(byteNumber);
       Serial.print('T');
       Serial.println(event_message);
-     // #endif
+      #endif
       if(!event_message && messageType == NOTE_ON && byteNumber == 0) //allow after touch
         byteNumber = 1;
       
@@ -259,8 +269,11 @@ void loop()
                   //the transmitter. (llllll) are the least significant 7 bits. (mmmmmm) 
                   //are the most significant 7 bits. 
               }
-              else if (messageType == 12 /*patch change*/
-                      ||/*Aftertouch*/ messageType == 13 )
+              else if (messageType == 12) /*patch change*/
+              {
+                //CUSTOM :)
+              }
+              else if(       /*Aftertouch*/ messageType == 13 )
               {
                 //not supported
                 Serial.println("IR-E");
@@ -320,8 +333,14 @@ void loop()
             //LS(7bits) of pitch wheel
             pitch_wheel = recbyte;
           }
-          else if (messageType == 12 /*patch change*/
-                      ||/*Aftertouch*/ messageType == 13 )
+          else if (messageType == 12) /*patch change*/
+          {
+           // Serial.println("button");
+            //CUSTOM :)
+            ButtonTriggered( ((~recbyte )>>3)&1, ((~recbyte )>>2)&1, ((~recbyte )>>1)&1,((~recbyte))&1 );
+            byteNumber = 0; //end-of-message
+          }
+          else if(       /*Aftertouch*/ messageType == 13 )
           {
             //not supported (end-of-message)
             byteNumber = 0;

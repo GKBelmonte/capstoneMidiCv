@@ -40,6 +40,10 @@
             this.bSend = new System.Windows.Forms.Button();
             this.tbReceived = new System.Windows.Forms.TextBox();
             this.pbKeyboard = new System.Windows.Forms.PictureBox();
+            this.button_up = new System.Windows.Forms.Button();
+            this.button_right = new System.Windows.Forms.Button();
+            this.button_left = new System.Windows.Forms.Button();
+            this.button_bot = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pbKeyboard)).BeginInit();
             this.SuspendLayout();
             // 
@@ -131,11 +135,51 @@
             this.pbKeyboard.TabIndex = 8;
             this.pbKeyboard.TabStop = false;
             // 
+            // button_up
+            // 
+            this.button_up.Location = new System.Drawing.Point(385, 197);
+            this.button_up.Name = "button_up";
+            this.button_up.Size = new System.Drawing.Size(25, 25);
+            this.button_up.TabIndex = 9;
+            this.button_up.UseVisualStyleBackColor = true;
+            this.button_up.Click += new System.EventHandler(this.button_up_Click);
+            // 
+            // button_right
+            // 
+            this.button_right.Location = new System.Drawing.Point(416, 222);
+            this.button_right.Name = "button_right";
+            this.button_right.Size = new System.Drawing.Size(25, 25);
+            this.button_right.TabIndex = 10;
+            this.button_right.UseVisualStyleBackColor = true;
+            this.button_right.Click += new System.EventHandler(this.button_right_Click);
+            // 
+            // button_left
+            // 
+            this.button_left.Location = new System.Drawing.Point(356, 222);
+            this.button_left.Name = "button_left";
+            this.button_left.Size = new System.Drawing.Size(25, 25);
+            this.button_left.TabIndex = 11;
+            this.button_left.UseVisualStyleBackColor = true;
+            this.button_left.Click += new System.EventHandler(this.button_left_Click);
+            // 
+            // button_bot
+            // 
+            this.button_bot.Location = new System.Drawing.Point(385, 248);
+            this.button_bot.Name = "button_bot";
+            this.button_bot.Size = new System.Drawing.Size(25, 25);
+            this.button_bot.TabIndex = 12;
+            this.button_bot.UseVisualStyleBackColor = true;
+            this.button_bot.Click += new System.EventHandler(this.button_bot_Click);
+            // 
             // MidiCv
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(515, 365);
+            this.Controls.Add(this.button_bot);
+            this.Controls.Add(this.button_left);
+            this.Controls.Add(this.button_right);
+            this.Controls.Add(this.button_up);
             this.Controls.Add(this.pbKeyboard);
             this.Controls.Add(this.tbReceived);
             this.Controls.Add(this.bSend);
@@ -165,6 +209,10 @@
         private System.Windows.Forms.Button bSend;
         private System.Windows.Forms.TextBox tbReceived;
         private System.Windows.Forms.PictureBox pbKeyboard;
+        private System.Windows.Forms.Button button_up;
+        private System.Windows.Forms.Button button_right;
+        private System.Windows.Forms.Button button_left;
+        private System.Windows.Forms.Button button_bot;
     }
 }
 

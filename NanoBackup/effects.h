@@ -6,6 +6,8 @@
 #include "inttoarr.h" //for int to ascii
 #include "Arduino.h"
 
+SoftwareSerial  iamsorry(SOFT_RX,SOFT_TX);
+//DigoleSerialDisp  digAHole (11,13,A5);
 inline void sendToNoteCV (uint16_t volt)
 {
     unsigned int command;
@@ -14,7 +16,7 @@ inline void sendToNoteCV (uint16_t volt)
     command |= 0x1000; //turn on
    // command |= 0x2000;//no gain
     command |= ( volt& 0x0FFF);
-    
+    SPI.setClockDivider(SPI_CLOCK_DIV4);
     digitalWrite(DAC1_SELECT,LOW);
     SPI.transfer(command>>8);
     SPI.transfer(command&0xFF);
@@ -30,7 +32,7 @@ inline void sendToVelocityCV (uint16_t volt)
     command |= 0x1000; //turn on
    // command |= 0x2000;//no gain
     command |= ( volt& 0x0FFF);
-    
+    SPI.setClockDivider(SPI_CLOCK_DIV4);
     digitalWrite(DAC1_SELECT,LOW);
     SPI.transfer(command>>8);
     SPI.transfer(command&0xFF);
@@ -42,7 +44,7 @@ uint8_t arpeggio_state; //0 , 7 or 12
 uint8_t arpeggio_stlye; // 1-5-8 , 1-5 or 1-8
 void Arpeggio()
 {
-    CallMeBackInNOverflows(Arpeggio , arpeggio_period << 4, VCO_ISR_ID);
+    CallMeBackInNOverflows(Arpeggio , arpeggio_period << 3, VCO_ISR_ID);
 
     uint16_t eqVoltage = noteMap[note + arpeggio_state] ;
     sendToNoteCV(eqVoltage);
@@ -114,21 +116,47 @@ state = (state + 1) &0b11111;
 uint8_t vibrato_magnitude ; //0 - 15, with 0 being off
 void Vibrato()
 {
-    CallMeBackInNOverflows(Arpeggio , vibrato_period << 3, VCO_ISR_ID);
+    CallMeBackInNOverflows(Vibrato , vibrato_period << 1, VCO_ISR_ID);
     uint8_t mag = FastDivide8( VIBRATO_MAX , 16 - vibrato_magnitude);
     uint16_t eqVoltage = noteMap[note]+ FastDivide8 ( mag , vibrato_state < 16 ? vibrato_state : 16 - (vibrato_state & 0b1111)  )  - (mag >> 1) ;
     sendToNoteCV(eqVoltage);
     vibrato_state = (vibrato_state +1)&0b11111;
 }
 
-
+#define SPITrans
 
 void clearLCD() 
 { 
+    //SPI.setClockDivider(SPI_CLOCK_DIV64);
     digitalWrite(LCD_SELECT,LOW);
-    SPI.transfer((uint8_t)'C');
-    SPI.transfer((uint8_t)'L');
+    digitalWrite(LCD_SELECT,LOW);
+    digitalWrite(LCD_SELECT,LOW);
+    #ifdef SPITrans
+    /*SPI.transfer('C');
+    SPI.transfer('L');
+    SPI.transfer('T');
+    SPI.transfer('P');
+    SPI.transfer(0);
+    SPI.transfer(0);*/
+    iamsorry.print("CLTP");
+    iamsorry.write((uint8_t)0);
+    iamsorry.write((uint8_t)0);
+    delay(1);
+    //iamsorry.print("CS");
+    //iamsorry.write(1);
+    #elif
+    shiftOut(11,13,MSBFIRST, 'C');//SPI.transfer('C');
+    shiftOut(11,13,MSBFIRST, 'L');    //SPI.transfer('L');
+    shiftOut(11,13,MSBFIRST, 'T');//SPI.transfer('T');
+    shiftOut(11,13,MSBFIRST, 'P');//SPI.transfer('P');
+    shiftOut(11,13,MSBFIRST, 0);//SPI.transfer(0);
+    shiftOut(11,13,MSBFIRST, );//SPI.transfer(0);
+    #endif
     digitalWrite(LCD_SELECT,HIGH);
+   // digAHole.clearScreen();
+   // digAHole.setPrintPos(0,0);
+    Serial.println();
+    
 }
 
 void writeToLCD(const char * str)
@@ -141,29 +169,57 @@ void writeToLCD(const char * str)
     //TT to send text
     // 0x00 to end Text transmision.. or 0x0d (which is a new line)
     //CS1 to enable cursor CS0 to disable
+    
     uint8_t c = 0;
+    //SPI.setClockDivider(SPI_CLOCK_DIV64);
     digitalWrite(LCD_SELECT,LOW);
-   // SPI.setDataMode(SPI_MODE0);
-    SPI.transfer('T');
+    #ifdef SPITrans
+    // SPI.setDataMode(SPI_MODE0);
+    /*SPI.transfer('T');
     SPI.transfer('T');
     while(str[c++])
+    {
+      Serial.print('w'); delay(1);
         SPI.transfer(str[c]);
-    SPI.transfer(0);
+    }
+    SPI.transfer(0);*/
+    iamsorry.print("TT");
+    iamsorry.println(str);
+    
+    #elif
+    //shiftOut(11,13,MSBFIRST, 'T');
+    //shiftOut(11,13,MSBFIRST, 'T');
+    //while(str[c++])
+    //    shiftOut(11,13,MSBFIRST, str[c]);//SPI.transfer(str[c]);
+        
+    //shiftOut(11,13,MSBFIRST, 0);//SPI.transfer(0);
+    #endif//
+    
     digitalWrite(LCD_SELECT,HIGH);
+    //  digAHole(str);
+    Serial.print(str);
 }
 
 const char * control_display [] =
 {
-    "IRCon: \0",
-    "ArpegPer: \0",
-    "ArpegStl: \0",
-    "ModulPer: \0",
-    "ModulStl: \0",
-    "VibPer: \0",
-    "VibMag: \0"
+    "IRCon: ",
+    "ArpegPer: ",
+    "ArpegStl: ",
+    "ModulPer: ",
+    "ModulStl: ",
+    "VibPer: ",
+    "VibMag: "
 };
 uint8_t control_state;
-uint8_t * control_state_vals [7];
+uint8_t * control_state_vals [7] ;/*= {
+     &iRcontrolled,
+     &arpeggio_period,
+     &arpeggio_stlye,
+     &modulus_period,
+     &modulus_type,
+     &vibrato_period,
+     &vibrato_magnitude
+};*/
 uint8_t control_state_vals_bounds[]=
 {
     3,//on-off-cont
@@ -186,6 +242,10 @@ uint8_t control_state_vals_bounds[]=
 
 void setupControl()
 {
+    iamsorry = SoftwareSerial (SOFT_RX,SOFT_TX);
+    iamsorry.begin(9600);
+    iamsorry.println("SB9600");
+    clearLCD();
     writeToLCD( "Yellow!");
     arpeggio_state=0;
     arpeggio_period =0;
@@ -199,7 +259,7 @@ void setupControl()
     control_state=0;
     control_state_vals[0] = &iRcontrolled;
     control_state_vals[1] = &arpeggio_period;
-    control_state_vals[2] = & arpeggio_stlye;
+    control_state_vals[2] = &arpeggio_stlye;
     control_state_vals[3] = &modulus_period;
     control_state_vals[4] = &modulus_type;
     control_state_vals[5] = &vibrato_period;
@@ -213,17 +273,17 @@ const char * EffectEnumMap( uint8_t control_state, uint8_t control_state_val )
         case 2:
             switch(control_state_val)
             {
-                case 0: return "1-5-8\0";
-                case 1: return "1-5\0";
-                case 2: return "1-8\0";               
+                case 0: return "1-5-8";
+                case 1: return "1-5";
+                case 2: return "1-8";               
             }
             break;
         case 4:
             switch(control_state_val)
             {
-                case 0: return "Saw\0";
-                case 1: return "InvSaw\0";
-                case 2: return "Triangle\0";
+                case 0: return "Saw";
+                case 1: return "Triangle";
+                case 2: return "InvSaw";
             }
             break;
     }
@@ -232,25 +292,40 @@ const char * EffectEnumMap( uint8_t control_state, uint8_t control_state_val )
 
 void writeLCDNewControlState() 
 {
+    //Serial.println("clear");
+    delay(1);
     clearLCD();   
-	writeToLCD(control_display[control_state ]) ;
+    //Serial.print("sts ");
+    Serial.println(control_state);
+    writeToLCD(control_display[control_state ]) ;
     if( control_state == IR_CONTROLLED_STATE || control_state == ARPEGGIO_PERIOD_STATE  
             || control_state == MODULUS_PERIOD_STATE || control_state == VIBRATO_MAGNITUDE_STATE  || control_state == VIBRATO_PERIOD_STATE   )
     {
+      delay(1);
+        //Serial.println("if1");
+        /*
         if(*control_state_vals[control_state] == 0)
-            writeToLCD("OFF\0");
+        {
+            writeToLCD("OFF");
+        }
         else
         {
+            //Serial.println("el2");
             char buffer [6] = {0};
             ResultToAscii(*control_state_vals[control_state],buffer);
+            //Serial.println(buffer);
             writeToLCD(buffer);
-        }                    
+        }*/
+        delay(1);        
     }
     else
     {
+        //Serial.println("el1");
         writeToLCD(EffectEnumMap (control_state, *control_state_vals[control_state]  ));
+        delay(1);
     }
-    writeToLCD("\n\0");
+    Serial.println();
+    //writeToLCD("\n");
 }
 
 void ToggleActiveEffect( uint8_t  val ) 
@@ -269,48 +344,67 @@ void ToggleActiveEffect( uint8_t  val )
     	    if(val)
     	        CallMeBackInNOverflows(Modulus , 1, VCA_ISR_ID);
     	    else
-    	        CancelCallback(0);
+    	        CancelCallback(VCA_ISR_ID);
     	    break;
     	case VIBRATO_MAGNITUDE_STATE:
     	    vibrato_state = 0;
     	    if(val)
     	        CallMeBackInNOverflows(Vibrato, 1,VCO_ISR_ID);
     	    else
-    	        CancelCallback(1);
+    	        CancelCallback(VCO_ISR_ID);
     	    break;
 	}
 }
 
+void ButtonTriggered(uint8_t up,uint8_t down, uint8_t left, uint8_t right)
+{
+  
+  /*Serial.print(up);
+  Serial.print(down);
+  Serial.print(left);
+  Serial.println(right);*/
+  if(!up)
+  {
+      control_state = (control_state +1) % 7;
+  }
+  else if (!down)
+  {
+      control_state = (control_state +6) % 7;
+  }
+  else if (!left)
+  {
+      uint8_t * val = control_state_vals[control_state];
+      
+      uint8_t bounds = control_state_vals_bounds[control_state];
+      *val = (*val +  bounds- 1 ) %bounds;
+      ToggleActiveEffect(*val);
+      
+
+  }
+  else
+  {
+      uint8_t * val = control_state_vals[control_state];
+      uint8_t bounds = control_state_vals_bounds[control_state];
+      
+      *val = (*val +  1 ) %bounds;
+      ToggleActiveEffect(*val);
+      
+  }
+  //Serial.println("writtingnew");
+  writeLCDNewControlState();
+ // Serial.println("Complete");
+}
+
 void controlCheck()
 {
+    uint8_t up =digitalRead(BUTTON_UP), down = digitalRead(BUTTON_DOWN), left
+    =digitalRead(BUTTON_LEFT), right =digitalRead(BUTTON_RIGHT);
     // to modular subtract add mod size -1 :)
-    if( ! (digitalRead(BUTTON_DOWN) && digitalRead(BUTTON_UP) && digitalRead(BUTTON_LEFT) && digitalRead(BUTTON_RIGHT) )  )
+    if( ! (down && up && left && right )  )
     {
         //A button has been pressed
-        if(!digitalRead(BUTTON_UP))
-        {
-            control_state = (control_state +1) % 7;
-        }
-        else if (!digitalRead(BUTTON_DOWN))
-        {
-            control_state = (control_state +6) % 7;
-        }
-        else if (!digitalRead(BUTTON_LEFT))
-        {
-            uint8_t * val = control_state_vals[control_state];
-            uint8_t bounds = control_state_vals_bounds[control_state];
-            val[0] = (*val +  bounds- 1 ) %bounds;
-            ToggleActiveEffect(*val);
-
-        }
-        else
-        {
-            uint8_t * val = control_state_vals[control_state];
-            uint8_t bounds = control_state_vals_bounds[control_state];
-            val[0] = (*val +  1 ) %bounds;
-            ToggleActiveEffect(*val);
-        }
+        ButtonTriggered( up, down,  left,  right);
     }
-    writeLCDNewControlState();
+    
 }
 #endif

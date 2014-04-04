@@ -215,5 +215,39 @@ namespace MIDI_CV_prototype
                 this.KeyPreview = false;
             }
         }
+
+        private void button_up_Click(object sender, EventArgs e)
+        {
+            serialSend(0x08);
+        }
+
+        private void serialSend(byte what)
+        {
+            try
+            {
+                serialPort.Write(new byte[] { (byte)(12 << 4), what}, 0, 2);
+            }
+            catch (Exception err)
+            {
+                MessageBox.Show(string.Format("Couldn't send because {0}", err.Message), "Err", MessageBoxButtons.OK);
+            }
+        }
+
+        private void button_bot_Click(object sender, EventArgs e)
+        {
+            serialSend(0x04);
+        }
+
+        private void button_left_Click(object sender, EventArgs e)
+        {
+            serialSend(0x02);
+        }
+
+        private void button_right_Click(object sender, EventArgs e)
+        {
+            serialSend(0x01);
+        }
+
+
     }
 }

@@ -39,6 +39,8 @@
 #define D2A_ISR_ID 4
 #define D2B_ISR_ID 5
 
+#define SOFT_RX A0
+#define SOFT_TX A1
 
 
 uint8_t byteNumber = 0;
