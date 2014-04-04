@@ -17,6 +17,11 @@ static uint8_t _callBackID3_c = 0;
 static uint8_t _callBackID4_c = 0;
 static uint8_t _callBackID5_c = 0;
 
+static void (*_callBacks[6])() ={_callBackID0,_callBackID1,_callBackID2,_callBackID3,
+                                  _callBackID4,_callBackID5};
+static uint8_t _callBackCounts [6] = { _callBackID0_c ,_callBackID1_c, _callBackID2_c,
+                                _callBackID3_c, _callBackID4_c, _callBackID5_c};
+
 //#define CancelCallback0() (_callBackID0=0)
 //#define CancelCallback0() (_callBackID1=0)
 void CancelCallback(uint8_t id)
@@ -132,7 +137,19 @@ ISR(TIMER1_OVF_vect)
   if(count++ %  32 == 0)
     digitalWrite(3, !digitalRead(3));
 
-  if(_callBackID0 != 0)
+   for(uint8_t ii = 0; ii < 6;++ii)
+   {
+      if(_callBacks[ii] != 0)
+      {
+        if(--_callBackCounts[ii] == 0)
+        {
+          void (*t)() = _callBacks[ii] ;
+          _callBacks[ii] = 0;
+          t();
+        }
+      }
+   }
+  /*if(_callBackID0 != 0)
   {
     if(--_callBackID0_c == 0)
     {
@@ -150,7 +167,7 @@ ISR(TIMER1_OVF_vect)
       _callBackID1();
       _callBackID1 = t;
     }
-  }
+  }*/
 }
 
 /*
@@ -162,15 +179,8 @@ ISR(TIMER1_OVF_vect)
 */
 void CallMeBackInNOverflows(void(*f)(), uint8_t n,uint8_t ID)
 {
-  if(ID == 0)
-  {
-    _callBackID0 = f;
-    _callBackID0_c = n;
-  }
-  else
-  {
-    _callBackID1 = f;
-    _callBackID1_c = n;
-  }
+
+  _callBacks[ID]= f;
+  _callBackCounts[ID] = n;
 }
 #endif
