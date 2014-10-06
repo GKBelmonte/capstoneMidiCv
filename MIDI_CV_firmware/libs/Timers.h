@@ -1,9 +1,3 @@
-
-
-#ifndef TIMER_LIB
-#define TIMER_LIB
-#include <avr/io.h>
-
 /* 
 XMEGA C [DATASHEET] p.158
 
@@ -376,6 +370,12 @@ XMEGA C [DATASHEET] 167
 ? Bit 7:0 – CCxBUF[15:8]: Compare or Capture Buffer high byte
 These bits hold the MSB of the 16-bit compare or capture buffer register.
 */
+
+/*Timers.h abstraction for timers*/
+#ifndef TIMER_LIB
+#define TIMER_LIB
+#include <avr/io.h>
+
 #include "HardAbs.h"
 #include <avr/interrupt.h>
 

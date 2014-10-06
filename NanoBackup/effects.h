@@ -1,3 +1,4 @@
+/*effects.h, includes all the effects produced digitally*/
 #ifndef DIGITAL_EFFECTS
 #define DIGITAL_EFFECTS
 #include "SPI.h"
@@ -47,9 +48,10 @@ uint8_t arpeggio_state; //0 , 7 or 12
 uint8_t arpeggio_stlye; // 1-5-8 , 1-5 or 1-8
 void Arpeggio()
 {
+  if(arpeggio_period !=0)
     CallMeBackInNOverflows(Arpeggio , arpeggio_period << 3, VCO_ISR_ID);
 
-    uint16_t eqVoltage = noteMap[note + arpeggio_state] ;
+    uint16_t eqVoltage = noteMap[note + arpeggio_state + 17] ;
     sendToNoteCV(eqVoltage);
     
     switch(arpeggio_stlye)
@@ -71,22 +73,23 @@ void Arpeggio()
 }
 
 uint8_t modulus_period ; // 0 - 31, 0 being off
-uint8_t modulus_state ; // 0 - 15
+uint8_t modulus_state ; // 0 - 31
 uint8_t modulus_type ; // 0:Saw, 1:InvertedSaw, 2:Triangle
 void Modulus()
 {
-       CallMeBackInNOverflows(Modulus , modulus_period << 2, VCA_ISR_ID);
+    if(modulus_period!= 0)
+       CallMeBackInNOverflows(Modulus , modulus_period << 1, VCA_ISR_ID);
        if(modulus_type == 3 || modulus_type == 4)
        {
          switch(modulus_type)
          {
            case 3:
              sendToVelocityCV 
-              ( FastDivide16( ((uint16_t)velocity )<< 5 , half_sin[modulus_state] )  & 0x0FFF) ;
+              ( FastDivide16_64Res( ((uint16_t)velocity )<< 5 , half_sin[modulus_state] )  & 0x0FFF) ;
               break;
           case 4:
              sendToVelocityCV 
-              ( FastDivide16( ((uint16_t)velocity )<< 5 , full_sin[modulus_state] )  & 0x0FFF) ;
+              ( FastDivide16_64Res( ((uint16_t)velocity )<< 5 , full_sin[modulus_state] )  & 0x0FFF) ;
               break;
          }
        }
@@ -96,13 +99,13 @@ void Modulus()
        switch(modulus_type)
        {
             case 0: //Sawtooth
-              modulus_state = (modulus_state + 1) &0b1111;
+              modulus_state = (modulus_state + 1) &0b111111;
               break;
             case 2: //Inverted sawtooth
-              modulus_state = (modulus_state - 1) &0b1111;
+              modulus_state = (modulus_state - 1) &0b111111;
               break;
             case 1: //Triangle
-              if(modulus_state == 15)
+              if(modulus_state == 63)
               {
                   modulus_type = 8;
                   modulus_state -=1;
@@ -111,7 +114,7 @@ void Modulus()
             
             case 3: //sineabs
             case 4: //sineline
-              modulus_state = (modulus_state + 1) &0b11111;
+              modulus_state = (modulus_state + 1) &0b111111;
               break;
             case 8:
               if(modulus_state == 0)
@@ -137,9 +140,10 @@ state = (state + 1) &0b11111;
 uint8_t vibrato_magnitude ; //0 - 15, with 0 being off
 void Vibrato()
 {
-    CallMeBackInNOverflows(Vibrato , vibrato_period << 1, VCO_ISR_ID);
+    if(  vibrato_period != 0 && vibrato_magnitude !=0)
+      CallMeBackInNOverflows(Vibrato , vibrato_period << 1, VCO_ISR_ID);
     uint8_t mag = FastDivide8( VIBRATO_MAX ,  vibrato_magnitude);
-    uint16_t eqVoltage = noteMap[note]+ FastDivide8 ( mag , vibrato_state < 16 ? vibrato_state : 16 - (vibrato_state & 0b1111)  )  - (mag >> 1) ;
+    uint16_t eqVoltage = noteMap[note + 17]+ FastDivide8 ( mag , vibrato_state < 16 ? vibrato_state : 16 - (vibrato_state & 0b1111)  )  - (mag >> 1) ;
     sendToNoteCV(eqVoltage);
     vibrato_state = (vibrato_state +1)&0b11111;
 }
@@ -361,10 +365,13 @@ void ToggleActiveEffect( uint8_t  val )
     	    if(val)
     	        CallMeBackInNOverflows(Arpeggio , 1, VCO_ISR_ID);
     	    else
+            {
     	        CancelCallback(VCO_ISR_ID);
+                Serial.println("cancelled");
+            }
     	    break;
     	case MODULUS_PERIOD_STATE:
-    	    arpeggio_state = 0;
+    	    modulus_state = 0;
     	    if(val)
     	        CallMeBackInNOverflows(Modulus , 1, VCA_ISR_ID);
     	    else
@@ -435,12 +442,140 @@ void controlCheck()
 
 uint8_t half_sin [] =
 {
-0,1,3,4,6,7,8,10,11,12,12,13,14,14,15,15,16,15,15,14,14,13,12,12,11,10,8,7,6,4,3,1
+0,
+3,
+6,
+9,
+12,
+16,
+19,
+22,
+24,
+27,
+30,
+33,
+36,
+38,
+41,
+43,
+45,
+47,
+49,
+51,
+53,
+55,
+56,
+58,
+59,
+60,
+61,
+62,
+63,
+63,
+64,
+64,
+64,
+64,
+64,
+63,
+63,
+62,
+61,
+60,
+59,
+58,
+56,
+55,
+53,
+51,
+49,
+47,
+45,
+43,
+41,
+38,
+36,
+33,
+30,
+27,
+24,
+22,
+19,
+16,
+12,
+9,
+6,
+3
+
 };
 
 uint8_t full_sin [] =
 {
-8,10,11,12,14,14,15,16,16,16,15,14,14,12,11,10,8,7,5,4,3,2,1,1,0,1,1,2,3,4,5,7
+32,
+35,
+38,
+41,
+44,
+47,
+50,
+52,
+55,
+57,
+59,
+60,
+62,
+63,
+63,
+64,
+64,
+64,
+63,
+63,
+62,
+60,
+59,
+57,
+55,
+52,
+50,
+47,
+44,
+41,
+38,
+35,
+32,
+29,
+26,
+23,
+20,
+17,
+14,
+12,
+9,
+7,
+5,
+4,
+2,
+1,
+1,
+0,
+0,
+0,
+1,
+1,
+2,
+4,
+5,
+7,
+9,
+12,
+14,
+17,
+20,
+23,
+26,
+29
+
 };
 
 

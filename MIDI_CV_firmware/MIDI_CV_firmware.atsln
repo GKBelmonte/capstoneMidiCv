@@ -15,6 +15,8 @@ Project("{E66E83B9-2572-4076-B26E-6BE79FF3018A}") = "SPITestCPP", "SPITestCPP\SP
 EndProject
 Project("{E66E83B9-2572-4076-B26E-6BE79FF3018A}") = "LCDScreen", "LCDScreen\LCDScreen.cppproj", "{49EFC0FA-362F-421C-BEA7-B25F4F3B3165}"
 EndProject
+Project("{E66E83B9-2572-4076-B26E-6BE79FF3018A}") = "FastDivideBench", "FastDivideBench\FastDivideBench.cppproj", "{ADC92065-860E-49BE-B8D9-A8E4429D2337}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|AVR = Debug|AVR
@@ -49,6 +51,10 @@ Global
 		{49EFC0FA-362F-421C-BEA7-B25F4F3B3165}.Debug|AVR.Build.0 = Debug|AVR
 		{49EFC0FA-362F-421C-BEA7-B25F4F3B3165}.Release|AVR.ActiveCfg = Release|AVR
 		{49EFC0FA-362F-421C-BEA7-B25F4F3B3165}.Release|AVR.Build.0 = Release|AVR
+		{ADC92065-860E-49BE-B8D9-A8E4429D2337}.Debug|AVR.ActiveCfg = Debug|AVR
+		{ADC92065-860E-49BE-B8D9-A8E4429D2337}.Debug|AVR.Build.0 = Debug|AVR
+		{ADC92065-860E-49BE-B8D9-A8E4429D2337}.Release|AVR.ActiveCfg = Release|AVR
+		{ADC92065-860E-49BE-B8D9-A8E4429D2337}.Release|AVR.Build.0 = Release|AVR
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

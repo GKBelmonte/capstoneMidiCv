@@ -85,10 +85,10 @@ void setup()
   pinMode(LCD_SELECT, OUTPUT);
   
   //inputs
-  pinMode(BUTTON_UP,INPUT);
-  pinMode(BUTTON_DOWN,INPUT);
-  pinMode(BUTTON_LEFT, INPUT);
-  pinMode(BUTTON_RIGHT, INPUT);
+ // pinMode(BUTTON_UP,INPUT);
+ // pinMode(BUTTON_DOWN,INPUT);
+ // pinMode(BUTTON_LEFT, INPUT);
+ // pinMode(BUTTON_RIGHT, INPUT);
   
   
   digitalWrite(DAC1_SELECT, HIGH);
@@ -98,7 +98,7 @@ void setup()
   digitalWrite(GATE_PIN, HIGH);
   digitalWrite(TRIGGER_PIN, HIGH);
   digitalWrite(ERROR_LED,HIGH);
-  
+  CallMeBackInNOverflows(ReadIRAnalogue , 4, IR_ISR_ID);
   
   
   SPI.setBitOrder(MSBFIRST);
@@ -126,7 +126,10 @@ void NotePlayed()
   digitalWrite(TRIGGER_PIN, LOW);
   CallMeBackInNOverflows(TriggerOff , 12, TRIGGER_ISR_ID);
 
-  uint16_t eqVoltage = noteMap[note] ;
+  uint16_t eqVoltage = noteMap[note+17] ;
+  arpeggio_state = 0;
+  modulus_state = 0;
+  vibrato_state = 0;
   sendToNoteCV(eqVoltage);
   
   //Set velocity CV
@@ -151,7 +154,7 @@ void ChangePitch()
     command = 0x0000;//DAC1A
     command |= 0x1000; //turn on
     //command |= 0x2000;//no gain
-    uint16_t eqVoltage = noteMap[note] + effective_shift ;
+    uint16_t eqVoltage = noteMap[note+17] + effective_shift ;
     //Serial.println(eqVoltage);
     command |= ( eqVoltage& 0x0FFF);
     
@@ -366,7 +369,7 @@ void loop()
           {
             
             velocity = recbyte;
-            if(velocity == 0)
+            if(recbyte == 0)
             {
               //Turn ADSR off
               NotesOff();

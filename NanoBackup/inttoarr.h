@@ -1,4 +1,5 @@
 /*
+  inttoarr.h
 	Places the 16 bit number in the string buffer
     ugly implementation, with no loops, but guaranteed speed for sure.
     Keep buffer at least of size 6 (2^16 -1 = 65524 which is 5 characters + null term)

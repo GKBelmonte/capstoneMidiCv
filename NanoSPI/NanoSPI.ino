@@ -1,3 +1,4 @@
+/*NanoSpi.ino SPI test filea*/
 #include "HardwareAbstraction.h"
 #include "SPI.h"
 #define NOTE_ON 9

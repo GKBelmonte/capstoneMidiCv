@@ -1,5 +1,4 @@
-
-
+/*SPI.h file to handle SPI hw abstractoin*/
 #ifndef SPI_LIB
 #define SPI_LIB
 #include <avr/io.h>

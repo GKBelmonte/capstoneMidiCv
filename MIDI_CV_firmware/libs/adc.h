@@ -124,6 +124,7 @@ flag can also be cleared by writing a one to its bit location.
 
 */
 
+/*ADC files*/
 #ifndef ADC_LIB
 #define ADC_LIB
 #include "HardAbs.h"
